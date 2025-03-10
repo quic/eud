@@ -10,6 +10,6 @@
 *   Header file containing EUD revision details 
 *
 ***************************************************************************/
-#define MAJOR_REV_ID (2) 
-#define MINOR_REV_ID (1) 
-#define SPIN_REV_ID (6) 
+#define MAJOR_REV_ID 2 
+#define MINOR_REV_ID 1 
+#define SPIN_REV_ID  7 

@@ -167,7 +167,7 @@
 #define SWD_GPIO_TRST_N_VAL                     (1<<SWD_GPIO_TRST_N_SHFT)
 #define SWD_DAP_TRST_N_VAL                      (1<<SWD_DAP_TRST_N_SHFT)
 
-#define swd_bitbang_VALIDVALUE_MSK               ~(  SWD_CLK_VAL         +\
+#define SWDBITBANG_VALIDVALUE_MSK               ~(  SWD_CLK_VAL         +\
                                                     SWD_DI_VAL          +\
                                                     SWD_RCTLR_SRST_N_VAL+\
                                                     SWD_GPIO_DI_OE_VAL  +\
@@ -198,7 +198,7 @@
 #define SWD_PORT1_SEL                           0x09
 
 #define SWD_PAYLOAD_LINE_RESET                  "\xFF\xFF\x32\x00"
-#define SWD_PAYLOAD_jtag_to_swd                 "\x9E\xE7\x0F\x00"
+#define SWD_PAYLOAD_JTAG_TO_SWD                 "\x9E\xE7\x0F\x00"
 
 //For OLD EUD SPEC **end**  //
 

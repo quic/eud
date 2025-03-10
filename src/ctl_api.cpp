@@ -666,7 +666,7 @@ EXPORT JtagEudDevice* eud_initialize_device_jtag(uint32_t deviceID, uint32_t opt
 
     
     if ((jtg_handle == NULL) || (*errcode != EUD_SUCCESS)){
-        QCEUD_Print("Error during jtag_eud device init. Err code: %d\n", *errcode);
+        QCEUD_Print("Error during jtag eud device init. Err code: %d\n", *errcode);
         return NULL;
     }
     //If limited initialization specified, simply return SWD handler.

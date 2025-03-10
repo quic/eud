@@ -669,7 +669,7 @@ EXPORT EUD_ERR_t swd_bitbang(SwdEudDevice *swd_handle_p, uint32_t SWDBitValues, 
 		return eud_set_last_error(EUD_ERR_BAD_HANDLE_PARAMETER);
 	}
 
-	if (SWDBitValues & swd_bitbang_VALIDVALUE_MSK)
+	if (SWDBitValues & SWDBITBANG_VALIDVALUE_MSK)
 		return eud_set_last_error(EUD_ERR_BAD_PARAMETER);
 
 	// If we have pending data to be sent out to the SWD peripheral, send it out and clear out the queue first

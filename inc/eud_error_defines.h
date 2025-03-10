@@ -23,7 +23,8 @@ typedef int32_t EUD_ERR_t; ///<Error code typedef (int32_t)
 ////////////////////////////EUD ERROR Defines////////////////////////////////
 //                                                                         //
 //  If you add an error definition, please add its description in          //
-//  eud_error_defines.cpp as a string to be returned by eud_get_error_string()  //
+//  eud_error_defines.cpp as a string to be returned by 				   //
+//  eud_get_error_string()  											   //
 //                                                                         //
 /////////////////////////////////////////////////////////////////////////////
 //
