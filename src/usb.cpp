@@ -15,7 +15,6 @@
 #include <sstream>
 #include <fstream>
 #include <string>
-#include "libusb-1.0/libusb.h"
 #if defined ( EUD_WIN_ENV )
 	#include <ctime>
 #endif
