@@ -13,6 +13,8 @@
 
 #include "eud.h"
 #include "jtag_eud.h"
+
+#include <algorithm>
 #include <string>
 #include <math.h>
 #include <stdlib.h>
@@ -1102,7 +1104,7 @@ JtagEudDevice::BitsFreeTdi()
     uint32_t available_in = ((JTAG_IN_BUFFER_SIZE - usb_num_bytes_pending_in_) * 8) - (full_in + partial_in);
     
     #if defined ( EUD_WIN_ENV )
-    return std::min(available_out, available_in);
+    return min(available_out, available_in);
     #elif defined (EUD_LNX_ENV)  
         return std::min(available_out, available_in);
     #endif
