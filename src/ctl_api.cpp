@@ -777,6 +777,9 @@ EXPORT SwdEudDevice *eud_initialize_device_swd(uint32_t deviceID, uint32_t optio
 
     swd_handle->WriteCommand(SWD_CMD_TIMING, SWD_CMD_RETRY_VALE);
     
+	// Disabling this code as jtag_to_swd sequence handling is taken care in 
+	// openocd codebase. 
+#if 0
     if ((*errcode = jtag_to_swd(swd_handle)) != EUD_SUCCESS ){
         eud_close_peripheral((PVOID*)swd_handle);
         return NULL;
@@ -804,6 +807,7 @@ EXPORT SwdEudDevice *eud_initialize_device_swd(uint32_t deviceID, uint32_t optio
 
     //Cleanup and return
     delete jtagID;
+#endif
 
 #if ENABLE_LIME
     uint64_t limeErrcode = 0;

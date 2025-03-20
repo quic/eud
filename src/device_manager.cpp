@@ -18,6 +18,7 @@
 #include "swd_eud.h"                       
 #include "trc_eud.h"
 #include "usb.h"
+#include <unistd.h>
 
 // #include "eud_api.h"
 #include "device_manager_defines.h"
@@ -1341,12 +1342,13 @@ PVOID* DeviceMgr::InitializeUsbDevice(uint32_t device_id, uint32_t devicetype, E
     periphtree_t* devtree_p;
     uint32_t counter;
     for (counter = 0; counter < MAX_EUD_PERIPH_ENABLE_RETRIES; counter++) {
-        Sleep(EUD_PERIPH_ENABLE_SLEEP_TIME);
+        // Sleep(EUD_PERIPH_ENABLE_SLEEP_TIME);
+        usleep(300 * 1000);
 
         devtree_p = GetDeviceTreeByDeviceId(device_id);
 
-        if (devtree_p != NULL) break;
-
+        if ((devtree_p != NULL) || (*devtree_p->swd_peripheral_devmgrname_p_ != NULL))
+            break;
     }
     if (devtree_p == NULL){
         *errorcode_p = eud_set_last_error(EUD_ERR_DEVICEID_NOT_FOUND);
