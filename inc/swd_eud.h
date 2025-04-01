@@ -106,7 +106,7 @@
 #define SWD_ACK_FAULT_MASK              0x1<<2
 
 //Only allow  status reads/writes for FPGA
-#if FPGA
+#ifdef FPGA
 #define SWD_APPEND_SWDSTATUS_FLAG       1
 #else
 #define SWD_APPEND_SWDSTATUS_FLAG       0
