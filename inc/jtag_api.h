@@ -39,12 +39,20 @@
 
 /**************************************//**
 *
-*   @brief Reset JTAG peripheral. JTAG peripheral should keep enumerated on USB.
+*   @brief Command resets the JTAG Peripheral while still keeping it enumerated with the host.  
+*	The OUT and IN buffers are cleared, and programmable parameters are restored to 
+*	their default values.
+*	The operator is responsible for coordinating this reset with other processes on the chip that 
+*	might be interfacing to this peripheral.
+*	The JTAG Peripheral will NAK any OUT tokens if the IN buffer is full, 
+*	and the OUT buffer is not empty.  
+*	This could cause execution of the reset command to be delayed or ignored.  
+*	To prevent this, the IN buffer must be drained when issuing a JTAG_Peripheral_Reset command.
 *
-*******************************************/                        
-EXPORT EUD_ERR_t				///< Error code. 0 for success. Call eud_get_error_string for ASCII description.
+*******************************************/ 
+EXPORT EUD_ERR_t 
 jtag_peripheral_reset(
-    JtagEudDevice* jtg_handle_p	///<Pointer to EUD Handle instance
+    JtagEudDevice* jtg_handle_p
     );
 
 /**************************************//**
@@ -206,25 +214,6 @@ jtag_32bit_end_keep(
     uint32_t* response
     );
 
-
-/**************************************//**
-*
-*   @brief Command resets the JTAG Peripheral while still keeping it enumerated with the host.  
-*	The OUT and IN buffers are cleared, and programmable parameters are restored to 
-*	their default values.
-*	The operator is responsible for coordinating this reset with other processes on the chip that 
-*	might be interfacing to this peripheral.
-*	The JTAG Peripheral will NAK any OUT tokens if the IN buffer is full, 
-*	and the OUT buffer is not empty.  
-*	This could cause execution of the reset command to be delayed or ignored.  
-*	To prevent this, the IN buffer must be drained when issuing a JTAG_Peripheral_Reset command.
-*
-*******************************************/ 
-EXPORT EUD_ERR_t 
-jtag_peripheral_reset(
-    JtagEudDevice* jtg_handle_p
-    );
-
 /**************************************//**
 *
 *   @brief Set JTAG TCK frequency. 
@@ -282,7 +271,6 @@ jtag_read_frequency(
 
 
 //QCOM_SNIP_BEGIN
-inline EUD_ERR_t eud_jtag_generic_opcode(JtagEudDevice* jtg_handle_p, uint8_t opcode, uint32_t payload, uint32_t* response);
 
 
 EXPORT EUD_ERR_t jtag_eud_speed(JtagEudDevice* jtg_handle_p, uint32_t speed);
