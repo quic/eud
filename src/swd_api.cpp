@@ -695,6 +695,69 @@ EXPORT EUD_ERR_t swd_bitbang(SwdEudDevice *swd_handle_p, uint32_t SWDBitValues, 
 	return err;
 }
 
+uint8_t outbuf[32] = {0};
+uint32_t bitbang_bytecnt = 0;
+
+EXPORT EUD_ERR_t SWDBitBangPack(SwdEudDevice* swd_handle_p, uint32_t SWDBitValues, uint32_t* returndata, bool force_flush) {
+
+	EUD_ERR_t err = 0;
+	uint8_t* inbuf = (uint8_t*) returndata;
+
+	outbuf[bitbang_bytecnt] = SWD_CMD_BITBANG;
+	pack_uint32_to_uint8_array2(SWDBitValues, &outbuf[bitbang_bytecnt+1]);
+	bitbang_bytecnt += 5;
+
+	if ( (bitbang_bytecnt + 5 > 32) || force_flush )
+	{
+#if 1
+		swd_handle_p->UsbWriteRead(bitbang_bytecnt, outbuf, 32, inbuf);
+#else
+		//outbuf[bitbang_bytecnt]   = SWD_CMD_FLUSH;
+		//outbuf[bitbang_bytecnt+1] = SWD_CMD_NOP;
+		//swd_handle_p->usb_write_timeout(bitbang_bytecnt+2, outbuf, 1000);
+		swd_handle_p->usb_write_timeout(bitbang_bytecnt, outbuf, 1000);
+		swd_handle_p->usb_read_timeout(32, inbuf, 100);
+#endif
+		memset(outbuf, 0, 32);
+		bitbang_bytecnt = 0;
+	}
+
+	//QCEUD_Print("BitBang operation: Cmd: %x Data write: %x Ack data: %x \n", outbuf[0], outbuf[1], *returndata);
+
+	return err;
+}
+
+
+EXPORT EUD_ERR_t send_data_via_bitbang(SwdEudDevice* swd_handle_p, uint64_t SWDBitValues, uint32_t numBits) {
+	EUD_ERR_t err = 0;
+	uint8_t swd_rctlr_srst_n = 1;
+    uint8_t swd_gpio_di_oe = 1;
+    uint8_t swd_gpio_srst_n = 1;
+    uint8_t swd_gpio_trst_n = 1;
+    uint8_t swd_dap_trst_n = 1;
+	int32_t idx = 0;
+	uint32_t *returndata = new uint32_t[8];
+	uint8_t bit = 0;
+	uint64_t value = 0;
+	bool force_flush = 0;
+
+	for (idx = numBits-1; idx >= 0 ; idx --) {
+		bit = (SWDBitValues >> idx) & 0x1;
+		if (idx == 0) {
+			force_flush = 1;
+		} else {
+			force_flush = 0;
+		}
+
+		SWDBitBangPack (swd_handle_p, (1 << 0) | (bit << 1) | (swd_rctlr_srst_n << 2) | (swd_gpio_di_oe << 3) | (swd_gpio_srst_n << 4) | (swd_gpio_trst_n << 5) | (swd_dap_trst_n << 6), returndata, 0);
+		SWDBitBangPack (swd_handle_p, (0 << 0) | (bit << 1) | (swd_rctlr_srst_n << 2) | (swd_gpio_di_oe << 3) | (swd_gpio_srst_n << 4) | (swd_gpio_trst_n << 5) | (swd_dap_trst_n << 6), returndata, force_flush);
+
+		value += (bit << idx);
+	}
+	delete returndata;
+	return err;
+}
+
 EXPORT EUD_ERR_t swd_di_tms(SwdEudDevice *swd_handle_p, uint32_t SWD_DITMSValue, uint32_t count)
 {
 
@@ -909,7 +972,7 @@ EXPORT EUD_ERR_t swd_flush_required(SwdEudDevice *swd_handle_p, uint8_t *flushre
 //reset should set mode to default, as well as frequency and buffers etc.
 */
 
-EXPORT EUD_ERR_t jtag_to_swd(SwdEudDevice *swd_handle_p)
+EXPORT EUD_ERR_t jtag_to_swd_adiv5(SwdEudDevice *swd_handle_p)
 {
 
 	EUD_ERR_t err = EUD_SUCCESS;
@@ -931,6 +994,46 @@ EXPORT EUD_ERR_t jtag_to_swd(SwdEudDevice *swd_handle_p)
 	// uint8_t swd_di_tms3[] = { 0xFF, 0xFF, 0x32, 0x00 }; //Note that these are reverse endian
 	if ((err = swd_di_tms(swd_handle_p, 0xFFFF, 0x32))!=0)
 		return err;
+
+	swd_handle_p->swd_to_jtag_operation_done_ = TRUE;
+
+	return EUD_SUCCESS;
+}
+
+EXPORT EUD_ERR_t jtag_to_swd_adiv6(SwdEudDevice *swd_handle_p)
+{
+
+	EUD_ERR_t err = EUD_SUCCESS;
+
+	if (swd_handle_p == NULL)
+	{
+		return eud_set_last_error(EUD_ERR_BAD_HANDLE_PARAMETER);
+	}
+
+	//cycles TMS high
+	if (err = send_data_via_bitbang(swd_handle_p, 0x1F, 0x05)) return err;
+
+	//Activation sequence
+	if (err = send_data_via_bitbang(swd_handle_p, 0x2EEEEEE6, 31)) return err;
+
+	//Leave dormant state
+    // -----------------------------
+    // 8 cycles TMS high
+	if (err = send_data_via_bitbang(swd_handle_p, 0xFF, 8)) return err;
+
+    //send_data_via_bitbang(swd_handle_p, 0x49CF9046A9B4A16197F5BBC745703D98, 128);      // MSB first
+	send_data_via_bitbang(swd_handle_p, 0x49CF9046A9B4A161, 64);      // MSB first
+
+	send_data_via_bitbang(swd_handle_p, 0x97F5BBC745703D98, 64);      // MSB first
+
+    // 4 cycles TMS low
+    send_data_via_bitbang(swd_handle_p, 0x0, 4);
+
+    // CoreSight SW-DP Activation Code
+    send_data_via_bitbang(swd_handle_p, 0x58, 8);      // MSB first
+
+    // Reset
+    send_data_via_bitbang(swd_handle_p, 0xFFFFFFFFFFFFC, 52);
 
 	swd_handle_p->swd_to_jtag_operation_done_ = TRUE;
 

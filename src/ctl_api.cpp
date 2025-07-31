@@ -593,7 +593,116 @@ EXPORT EUD_ERR_t eud_msm_reset(uint32_t deviceID, uint32_t resettime_ms){
 
 }
 
+////////////////////////////////////////////////// 
+//
+//   Function: eud_ctl_assert_srst 
+//   Description: Asserts or de-asserts the SRST signal for the specified device. 
+//                The SRST signal is used to reset the device. 
+// 
+//   Arguments: 
+//                deviceID - uint32_t type - The ID of the device to assert 
+//                                           or de-assert SRST for. 
+//                value - bool type - A boolean value indicating whether 
+//                                    to assert (true) or de-assert (false) SRST. 
+// 
+//   Returns: error - EUD_ERR_t type, errorcode 
+//            See eud_get_error_string for error definition. 
+// 
+//   Scope: External function (Externally callable)
+//
+//
+//////////////////////////////////////////////////
 
+EXPORT EUD_ERR_t eud_ctl_assert_srst(uint32_t deviceID, bool value){
+
+    EUD_ERR_t err = EUD_SUCCESS;
+
+    CtlEudDevice* ctl_handle_p = eud_initialize_device_ctl(deviceID,EUD_CTL_INIT_NO_OPTIONS_VALUE, &err);
+    if (ctl_handle_p == NULL) return eud_get_last_error();
+
+    if (value > 0)
+        err = ctl_handle_p->WriteCommand(CTL_CMD_CTLOUT_CLR, (1 << CTL_CTL_RCTLR_SRST_N_SHFT)); //assert
+    else
+        err = ctl_handle_p->WriteCommand(CTL_CMD_CTLOUT_SET, (1 << CTL_CTL_RCTLR_SRST_N_SHFT));
+
+    eud_close_peripheral((PVOID*)ctl_handle_p);
+
+    return err;
+}
+
+////////////////////////////////////////////////// 
+//
+//   Function: eud_ctl_assert_trst 
+//   Description: Asserts or de-asserts the TRST signal for the specified device.
+//                The TRST signal is used to reset the JTAG interface.
+// 
+//   Arguments: 
+//                deviceID - uint32_t type - The ID of the device to assert 
+//                                           or de-assert TRST for. 
+//                value - bool type - A boolean value indicating whether 
+//                                    to assert (true) or de-assert (false) TRST. 
+// 
+//   Returns: error - EUD_ERR_t type, errorcode 
+//            See eud_get_error_string for error definition. 
+// 
+//   Scope: External function (Externally callable)
+//
+//
+//////////////////////////////////////////////////
+
+EXPORT EUD_ERR_t eud_ctl_assert_trst(uint32_t deviceID, bool value){
+
+    EUD_ERR_t err = EUD_SUCCESS;
+
+    CtlEudDevice* ctl_handle_p = eud_initialize_device_ctl(deviceID,EUD_CTL_INIT_NO_OPTIONS_VALUE, &err);
+    if (ctl_handle_p == NULL) return eud_get_last_error();
+
+    if (value > 0)
+        err = ctl_handle_p->WriteCommand(CTL_CMD_CTLOUT_CLR, (1 << CTL_EDL_REQ_SHFT)); //assert
+    else
+        err = ctl_handle_p->WriteCommand(CTL_CMD_CTLOUT_SET, (1 << CTL_EDL_REQ_SHFT));
+
+    eud_close_peripheral((PVOID*)ctl_handle_p);
+
+    return err;
+
+}
+
+////////////////////////////////////////////////// 
+//
+//   Function: eud_ctl_check_srst_status 
+//   Description: Checks the current status of the SRST signal for the specified
+//                device. This function returns the current state of the SRST 
+//                signal, allowing the caller to determine if the device is 
+//                currently in reset.
+// 
+//   Arguments: 
+//              deviceID - uint32_t type - The ID of the device to check SRST status for.
+//              payload - uint32_t* type - A pointer to a uint32_t that will be filled 
+//                                           with the current SRST status.
+// 
+//   Returns: error - EUD_ERR_t type, errorcode 
+//            See eud_get_error_string for error definition.
+// 
+//   Scope: External function (Externally callable)
+//
+//
+//////////////////////////////////////////////////
+
+EXPORT EUD_ERR_t eud_ctl_check_srst_status(uint32_t deviceID, uint32_t *payload){
+
+    EUD_ERR_t err = EUD_SUCCESS;
+
+    CtlEudDevice* ctl_handle_p = eud_initialize_device_ctl(deviceID,EUD_CTL_INIT_NO_OPTIONS_VALUE, &err);
+    if (ctl_handle_p == NULL) return eud_get_last_error();
+
+    ctl_handle_p->WriteCommand(CTL_CMD_CTLOUT_READ, payload);
+
+    eud_close_peripheral((PVOID*)ctl_handle_p);
+
+    return err;
+
+}
 
 //===---------------------------------------------------------------------===//
 //
@@ -776,11 +885,11 @@ EXPORT SwdEudDevice *eud_initialize_device_swd(uint32_t deviceID, uint32_t optio
     }
 
     swd_handle->WriteCommand(SWD_CMD_TIMING, SWD_CMD_RETRY_VALE);
-    
+
 	// Disabling this code as jtag_to_swd sequence handling is taken care in 
 	// openocd codebase. 
-#if 0
-    if ((*errcode = jtag_to_swd(swd_handle)) != EUD_SUCCESS ){
+    #if 0    
+    if ((*errcode = jtag_to_swd_adiv5(swd_handle)) != EUD_SUCCESS ){
         eud_close_peripheral((PVOID*)swd_handle);
         return NULL;
     }

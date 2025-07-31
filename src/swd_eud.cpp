@@ -95,7 +95,8 @@ EUD_ERR_t SwdEudDevice::AssertReset(void) {
 
     err = swd_bitbang(this, swd_bitbang_value, &return_val);
 
-    err = jtag_to_swd(this);
+    // This below has to be checked , how to handle it for adiv6
+    err = jtag_to_swd_adiv5(this);
 
     err = swd_get_jtag_id(this, &DPIDR);
 

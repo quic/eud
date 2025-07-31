@@ -1339,12 +1339,14 @@ PVOID* DeviceMgr::InitializeUsbDevice(uint32_t device_id, uint32_t devicetype, E
 
     eud_close_peripheral((PVOID*)ctl_device_p);
 
+    //This delay is required before attempting USB connection for EUD SWD Node
+    usleep(150 * 1000);
+
     periphtree_t* devtree_p;
     uint32_t counter;
     for (counter = 0; counter < MAX_EUD_PERIPH_ENABLE_RETRIES; counter++) {
-        // Sleep(EUD_PERIPH_ENABLE_SLEEP_TIME);
-        usleep(300 * 1000);
 
+        usleep(EUD_PERIPH_ENABLE_SLEEP_TIME * 1000);
         devtree_p = GetDeviceTreeByDeviceId(device_id);
 
         if ((devtree_p != NULL) || (*devtree_p->swd_peripheral_devmgrname_p_ != NULL))

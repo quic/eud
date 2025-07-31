@@ -8,7 +8,7 @@
 *
 * Description:                                                              
 *   Header file for EUD Trace peripheral public APIs
-*   Note: Trace Peripheral not completed due to hardware limitations 
+*   Note: Trace Peripheral not completed and is under develepment
 *
 ***************************************************************************/
 #ifndef trc_api_H_
@@ -58,180 +58,188 @@
 
 #include "trc_eud.h"
 
-EXPORT EUD_ERR_t
-/**************************************//**
-*   EUD_ERR_t eud_open_trace (PVOID*  trc_handle_p, TraceUSBStruct TraceUSBStructure)
-*
-*   @brief Sets up EUD Trace peripheral for receiving traces. Populates TraceUSBStructure with USB parameters
-*          for caller to directly read trace data from USB. Call EUD_StartTrace() for trace peripheral to start
-*          recording traces. Call eud_initialize_device_trace() prior to this to get pointer to EUDHandlerWrap.
-*
-*   Parameters: PVOID*  trc_handle_p - pointer to EUD Handle instance. 
-*                                      Call eud_initialize_device_trace to get EUD Handle Instance.
-*
-*   Returns: EUD_ERR_t - Error code. 0 for success. Call eud_get_error_string for ASCII description.
-*
-*******************************************/
-eud_open_trace(
-    TraceEudDevice* trace_handle_p  ///<PVOID*  trc_handle_p - pointer to EUD Handle instance. Call eud_initialize_device_trace to get EUD Handle Instance.
-    );
+typedef struct {
+    uint32_t eud_dev_id;
+    uint32_t trace_trns_len;
+    uint32_t trace_trns_tmout;
+    uint32_t trace_on_time;
+    #ifdef __cplusplus
+        std::string output_file_name;
+    #endif //__cplusplus
+    uint32_t wait;
+} trace_config_data;
 
 
-EXPORT EUD_ERR_t
-/**************************************//**
+/**
+*   @breif: Function for initialising trace. 
+*   @param: NULL
+*   @return: Error status
+*/
+EXPORT EUD_ERR_t eud_trace_device_init(uint32_t device_id, uint32_t trns_len, uint32_t trns_tmout, uint32_t on_time);
+
+/**
+*  EUD_OpenTrace(TraceEudDevice* trace_handle_p,trace_config_data* json_trace_data);
+*
+*   @brief: Sets up EUD Trace peripheral for receiving traces. Populates TraceUSBStructure with USB parameters
+*           for caller to directly read trace data from USB. Call EUD_StartTrace() for trace peripheral to start
+*           recording traces. Call eud_initialize_device_trace() prior to this to get pointer to EUDHandlerWrap.
+*
+*   @param: trc_handle_p - pointer to EUD Handle instance. Call eud_initialize_device_trace to get EUD Handle Instance.
+*           json_trace_data - pointer to a structure that stores trace 
+*                                      configuration data like trace trsn time on time etc. 
+*   @return: EUD_ERR_t - Error code. 0 for success. Call EUDGetErrorString for ASCII description.
+*
+*/
+EXPORT EUD_ERR_t eud_trace_config(
+    TraceEudDevice* trace_handle_p,  
+    trace_config_data* json_trace_data
+);
+
+/**
+*   @breif: Function that collects traces and saves it in the file. 
+*   @param: TraceEudDevice* trace_handle_p - pointer to EUD Handle instance.   
+*           trace_config_data* json_trace_data - stores trace configuration.
+*   @return: EUD_ERR_t - Error status
+*/
+EXPORT EUD_ERR_t eud_start_tracing(
+    TraceEudDevice* trace_handle_p,  
+    trace_config_data* json_trace_data
+);
+
+/**
 *
 *   @brief Traces are collected in chunks of <chunksize>, up to maximum of <maxchunks>. 
 *   These parameters are specified here.
 *
-*******************************************/
-eud_trace_set_chunk_sizes(
-    TraceEudDevice* trace_handle_p, ///<PVOID*  trc_handle_p - pointer to EUD Handle instance. Call eud_initialize_device_trace to get EUD Handle Instance.
-    uint32_t chunk_size,         ///<This indicates the size of chunks to be saved.Default is 1 MegaByte.Max is 10 MegaBytes.
-    uint32_t max_chunks          ///<This indicates the maximum size (sum of chunks) to be collected. Default is 10 MegaBytes. Max is 1 Gigabyte.
-    );
-
-EXPORT EUD_ERR_t 
-/**************************************//**
+*   @param: trc_handle_p - pointer to EUD Handle instance. Call eud_initialize_device_trace to get EUD Handle Instance.   
+*           chunksize - This indicates the size of chunks to be saved.Default is 1 MegaByte.Max is 10 MegaBytes.
+*           maxchunks - This indicates the maximum size (sum of chunks) to be collected. Default is 10 MegaBytes. Max is 1 Gigabyte.
+*   @return: EUD_ERR_t -  Error status
 *
-*   @brief Set output directory for trace binary files. 
-*   If directory doesn't exist, will attempt to create it, else will fail.
-*
-*******************************************/
-eud_trace_set_output_dir(
-    TraceEudDevice* trace_handle_p, ///<PVOID*  trc_handle_p - pointer to EUD Handle instance. Call eud_initialize_device_trace to get EUD Handle Instance.
-    char* output_directory       ///<This is the directory to save trace files at. Default is the OS temp directory. The location will be 
-                                ///<printed at the start of gathering traces.
-    );
-
-
-EXPORT EUD_ERR_t
-/**************************************//**
-*
-*   @brief Retrieve current output directory. Useful if defaults are used since 
-*   default trace directory is a  timestamped temporary folder.
-*
-*******************************************/
-eud_trace_get_output_dir(
-    TraceEudDevice* trace_handle_p, ///<PVOID*  trc_handle_p - pointer to EUD Handle instance. Call eud_initialize_device_trace to get EUD Handle Instance.
-    char* output_directory,      ///<ASCII pointer to be populated with output directory path.
-    uint32_t* string_size_p      ///<Character length of ASCII filepath 
+*/
+EXPORT EUD_ERR_t eud_trace_set_chunk_sizes(
+    TraceEudDevice* trace_handle_p, 
+    uint32_t chunksize,         
+    uint32_t maxchunks          
 );
 
-
-
-//QCOM_SNIP_BEGIN
-
-//EXPORT EUD_ERR_t 
-/**************************************//**
-*   @brief EUD Trace software allows two capture modes - 
-*   circular buffer (0) or sequential (1). If circular buffer is selected,
-*   software will capture trace in ChunkSize increments up to MaxChunks,
-*   then start overwriting initial chunks. If sequential mode is selected,
-*   then software will capture trace in ChunkSize incrementes up to MaxChunks,
-*   and then stop receiving traces.
+/**
 *
-*******************************************/
-//EUD_TraceSetCaptureMode(
-//  TraceEudDevice* trace_handle_p, 
-//  uint32_t capturemode
-//  );
-//QCOM_SNIP_END
+*   @brief Set output directory for trace binary files. If directory doesn't exist, will attempt to create it, else will fail.
+*   @param:trace_handle_p - pointer to EUD Handle instance. Call eud_initialize_device_trace to get EUD Handle Instance.
+*          outputdirectory - This is the directory to save trace files at. Default is the OS temp directory. The location will be 
+*          printed at the start of gathering traces.
+*   @return: EUD_ERR_t -  Error status
+*
+*/
+EXPORT EUD_ERR_t eud_trace_set_output_dir(
+    TraceEudDevice* trace_handle_p, 
+    char* outputdirectory                                      
+);
 
+/** 
+*
+*   @brief: Retrieve current output directory. Useful if defaults are used since 
+*           default trace directory is a  timestamped temporary folder.
+*   @param: trc_handle_p - pointer to EUD Handle instance. Call eud_initialize_device_trace to get EUD Handle Instance.
+*           outputdirectory - ASCII pointer to be populated with output directory path
+*           stringsize_p - Character length of ASCII filepath 
+*   @return: EUD_ERR_t -  Error status
+*/
+EXPORT EUD_ERR_t eud_trace_get_output_dir(
+    TraceEudDevice* trace_handle_p, 
+    char* outputdirectory,      
+    uint32_t* stringsize_p      
+);
 
-EXPORT EUD_ERR_t
-/**************************************//**
+/**
 *   @brief Sets trace timeout parameter in milliseconds. 
-*
 *   Each time a transfer is completed, the transfer timer is re-started. If transfer does not
 *   complete before  the time expires, the Trace Peripheral terminates the transfer by sending
 *   either a zero or parital length packet and resetting the transfer packet counter and the 
 *   transfer timer.
-*
-*******************************************/
-eud_trace_set_timeout_ms(
-    TraceEudDevice* trace_handle_p, ///<PVOID*  trc_handle_p - pointer to EUD Handle instance. Call eud_initialize_device_trace to get EUD Handle Instance.
-    uint32_t ms_timeout_val ///<uint32_t MS_Timeout_Val - timeout value in milliseconds. Max value of 0xFFFFFF
-    );
+*   @param: trc_handle_p - pointer to EUD Handle instance. Call eud_initialize_device_trace to get EUD Handle Instance.
+*           MS_Timeout_Val - timeout value in milliseconds. Max value of 0xFFFFFF  
+*   @return:EUD_ERR_t -  Error status
+*/
+EXPORT EUD_ERR_t eud_trace_set_timeout_ms(
+    TraceEudDevice* trace_handle_p,
+    uint32_t MS_Timeout_Val 
+);
 
-EXPORT EUD_ERR_t
-/**************************************//**
+/**
 *
-*   Transfer length specifies the number of bytes in a USB transfer to the host. Upon receipt
+*   @brief: Transfer length specifies the number of bytes in a USB transfer to the host. Upon receipt
 *   of this command, the transfer length counter is reset. When the number of bytes loaded 
 *   into the IN buffer equals Transfer Length, the trace peripheral sends either a short packet
 *   or a zero length packet to the host upon receipt of the next IN token.
 *   Note that teh value of Transfer length cannot be equal to an integer number of packets plus one,
-*   or an integer number of packets plus 2. Transfer length counter is reset on eud_reinit_trace().
+*   or an integer number of packets plus 2. Transfer length counter is reset on EUD_ReInitTrace().
 *
 *   Each time a transfer is completed, the transfer timer is re-started. If transfer does not
 *   complete before the time expires, the Trace Peripheral terminates the transfer by sending
 *   either a zero or parital length packet and resetting the transfer packet counter and the 
 *   transfer timer.
+*  @param:trc_handle_p - pointer to EUD Handle instance. Call eud_initialize_device_trace to get EUD Handle Instance.
+*          TransactionLength Transfer length in bytes. Max of 0xFFFF.  
+*  @return:EUD_ERR_t -  Error status
 *
-*******************************************/
-eud_trace_set_transfer_length(
-    TraceEudDevice* trace_handle_p, ///<PVOID*  trc_handle_p - pointer to EUD Handle instance. Call eud_initialize_device_trace to get EUD Handle Instance.
-    uint32_t transaction_length  ///<Transfer length in bytes. Max of 0xFFFF.
-    );
-
-
-EXPORT EUD_ERR_t     
-/**************************************//**
-                                        *
-*   @brief Shut down trace peripheral internals. Alternative to calling eud_close_peripheral(EUDHandlerWrap)
+*/
+EXPORT EUD_ERR_t eud_trace_set_transfer_length(
+    TraceEudDevice* trace_handle_p, 
+    uint32_t TransactionLength 
+);
+   
+/**
+*   @brief Shut down trace peripheral internals. Alternative to calling EUDClosePeripheral(EUDHandlerWrap)
+*   @param:trc_handle_p - pointer to EUD Handle instance. Call eud_initialize_device_trace to get EUD Handle Instance. 
+*   @return:EUD_ERR_t -  Error status
 *
-*******************************************/
-eud_close_trace(
+*/
+EXPORT EUD_ERR_t eud_close_trace(
     TraceEudDevice* trace_handle_p ///<PVOID*  trc_handle_p - pointer to EUD Handle instance. Call eud_initialize_device_trace to get EUD Handle Instance.
-    );
-    
-                   
-//QCOM_SNIP_BEGIN
+);
 
+/////////////////////////////////////////////////////////////////////////////////
+///
+///  Qualcomm Internal Trace functions
+///
+//////////////////////////////////////////////////////////////////////////////////
 
-//===---------------------------------------------------------------------===//
-//
-//  Qualcomm Internal Trace functions
-//
-//===---------------------------------------------------------------------===//
-
-/**************************************//**
+/**
 *   @brief Issue trace flush operation
-*
-*******************************************/
-EXPORT EUD_ERR_t 
-eud_flush_trace(
+*   @param:trc_handle_p - pointer to EUD Handle instance. Call eud_initialize_device_trace to get EUD Handle Instance. 
+*   @return:EUD_ERR_t -  Error status
+*/
+EXPORT EUD_ERR_t eud_flush_trace(
     TraceEudDevice* trace_handle_p
-    );
+);
 
-EXPORT EUD_ERR_t 
 /**************************************//**
 *   @brief Toggle the EUD Trace peripheral to stop trace flow. 
 *
 *   EUD_StartTrace toggles EUD Trace peripheral to stop passing traces to USB controller. 
-*   No internals are shut off, so EUD_StartTrace and eud_stop_trace can be called without 
+*   No internals are shut off, so EUD_StartTrace and EUD_StopTrace can be called without 
 *   affecting the state of the trace controller.
-*
+*   @param:trc_handle_p - pointer to EUD Handle instance. Call eud_initialize_device_trace to get EUD Handle Instance. 
+*   @return:EUD_ERR_t -  Error status
 *******************************************/
-eud_stop_trace(
+EXPORT EUD_ERR_t eud_stop_trace(
     TraceEudDevice* trace_handle_p  ///<Parameters: PVOID*  trc_handle_p - pointer to EUD Handle instance. Call eud_initialize_device_trace to get EUD Handle Instance.
-    );
-
-
-EXPORT EUD_ERR_t     
-/**************************************//**
+);
+   
+/**
 *   @brief Flushes trace buffer and restarts trace flows. Does not 
 *   change internal settings.
-*
-*******************************************/
-eud_reinit_trace(
+*   @param:trc_handle_p - pointer to EUD Handle instance. Call eud_initialize_device_trace to get EUD Handle Instance. 
+*   @return:EUD_ERR_t -  Error status
+*/
+EXPORT EUD_ERR_t eud_reinit_trace(
     TraceEudDevice* trace_handle_p ///<PVOID*  trc_handle_p - pointer to EUD Handle instance. Call eud_initialize_device_trace to get EUD Handle Instance.
-    );
+);
 
-
-EXPORT EUD_ERR_t
-/**************************************//**
-*   EXPORT EUD_ERR_t eud_trace_reset(PVOID*  trc_handle_p);
+/**
+*   EXPORT EUD_ERR_t EUD_TraceReset(PVOID*  trc_handle_p);
 *
 *   @brief Resets Trace peripheral while still keeping it enumerated with the host.
 *
@@ -239,16 +247,66 @@ EXPORT EUD_ERR_t
 *   Buffers are cleared and default parameters are restored.
 *   The caller is responsible for coordinating this reset with other processes on the chip
 *   that may interface with the trace peripheral.
-*
-// *   Parameters: PVOID*  trc_handle_p - pointer to EUD Handle instance. 
-*                                      Call eud_initialize_device_trace to get EUD Handle Instance.
-*
-*   Returns: EUD_ERR_t - Error code. 0 for success. Call eud_get_error_string for ASCII description.
-*
-*******************************************/
-eud_trace_reset(
+*   @param:trc_handle_p - pointer to EUD Handle instance. 
+*          Call eud_initialize_device_trace to get EUD Handle Instance.
+*   @return: EUD_ERR_t - Error code. 0 for success. Call EUDGetErrorString for ASCII description.
+*/
+EXPORT EUD_ERR_t eud_trace_reset(
     TraceEudDevice* trace_handle_p
-    );
-//QCOM_SNIP_END    
-#endif //trc_api_H_
+);
+ 
+/**
+*   @brief: Sends TRACE_PERIPH_RST command.
+*   @param:trc_handle_p - pointer to EUD Handle instance. Call eud_initialize_device_trace to get EUD Handle Instance. 
+*   @return:EUD_ERR_t -  Error status
+*/
+EXPORT EUD_ERR_t trace_periph_rst(
+    TraceEudDevice* trc_handler_p
+);
 
+/**
+*   @brief: Sends TRACE_KEEP command.
+*   @param:trc_handle_p - pointer to EUD Handle instance. Call eud_initialize_device_trace to get EUD Handle Instance. 
+*   @return:EUD_ERR_t -  Error status
+*/
+EXPORT EUD_ERR_t trace_keep(
+    TraceEudDevice* trc_handler_p
+);
+
+
+/**
+*   @brief: sends TRACE_TRNS_TMOUT comamnd.
+*   @param:trc_handle_p - pointer to EUD Handle instance. Call eud_initialize_device_trace to get EUD Handle Instance. 
+*   @return:EUD_ERR_t -  Error status
+*/
+EXPORT EUD_ERR_t  trace_trns_tmout(
+    TraceEudDevice* trc_handler_p, uint32_t MS_Timeout_Val
+);
+
+
+/**
+*   @brief:  sends TRACE_TRNS_LEN comamnd.
+*   @param:  trc_handle_p - pointer to EUD Handle instance. Call eud_initialize_device_trace to get EUD Handle Instance. 
+*   @return: EUD_ERR_t -  Error status
+*/
+EXPORT EUD_ERR_t trace_trns_len(
+    TraceEudDevice* trc_handler_p, uint32_t  TransactionLength
+);
+
+/**
+*   @breif: Recieves trace configuration data from OPenOCD and sets the paramters and starts reading trace
+*   @param: uint32_t trns_len - transaction length for trace 
+*   @param: uint32_t trns_tmout - time out for trace 
+*   @param: uint32_t on_time - time for which trace needs to be collected. 
+*   @return: Error status
+*/
+EXPORT EUD_ERR_t eud_trace_device_read(void);
+
+/**
+*   @breif: closes trace peripheral. 
+*   @param: NULL
+*   @return: Error status
+**/
+EXPORT EUD_ERR_t eud_trace_device_close(void);
+
+#endif //TRACEAPI_H

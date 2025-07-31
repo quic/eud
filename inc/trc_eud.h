@@ -8,7 +8,7 @@
 *
 * Description:                                                              
 *   Header file for EUD Trace peripheral class and other defines
-*   Note: Trace Peripheral not completed due to hardware limitations 
+*   Note: Trace Peripheral not completed and is under development
 *
 ***************************************************************************/
 #ifndef TRC_EUD_H
@@ -23,7 +23,7 @@
 //===---------------------------------------------------------------------===//
 
 ///Initialization options mask. No options allowed at this time.
-#define INIT_TRC_ALLOWED_OPTIONS_MSK    0 
+#define INIT_TRC_ALLOWED_OPTIONS_MSK    1 
 
 ///Trace peripheral opcodes
 #define TRC_CMD_NOP                     0x0
@@ -61,24 +61,24 @@
 
 #define TRC_NUM_OPCODES                 7
 /////////////////Trace API masks and defaults/////////////
-#define TRACE_TRNS_TMOUT_MSK                0x7FFFFF
+#define TRACE_TRNS_TMOUT_MSK                0x00FFFFFF
 #define TRACE_TRNS_TMOUT_MAX                TRACE_TRNS_TMOUT_MSK
 #define TRACE_TRNS_TMOUT_MIN                0x1
 #define TRACE_TRNS_LEN_MSK                  0xFFFF
 
-#define TRACE_DEFAULT_TRNS_TMOUT            8*500           /// ==500*8*125us == ~1/2 second. Default timeout value.
+#define TRACE_DEFAULT_TRNS_TMOUT            0x00FFFFFF//8*500           /// ==500*8*125us == ~1/2 second. Default timeout value.
 
 #define TRACE_DEFAULT_TRANSACTION_LENGTH    100             /// Default transaction length to be passed to EUD TRC peripheral.
 
-#define TRACE_MAX_TRANSLEN_SIZE             3*1024                      ///<Max  static trace buffer size. 
-#define TRACE_MIN_TRANSLEN_SIZE             80                          ///<Minimum  static trace buffer size. 
+#define TRACE_MAX_TRANSLEN_SIZE             0x0000FFFF // 3*1024                      ///<Max  static trace buffer size. 
+#define TRACE_MIN_TRANSLEN_SIZE             2 // 80                          ///<Minimum  static trace buffer size. 
 #define TRACE_MAX_BUFFER_SIZE               TRACE_MAX_TRANSLEN_SIZE*2   ///<Size of maximum  needed buffer size for trace
 
 #define EUD_TRC_DEFAULT_CHUNKSIZE           1024*1024*1     ///Default chunk size to write trace data to. Default is 1MB.
 
 #define EUD_TRC_DEFAULT_MAXCHUNKS           10              ///Max number of chunks. 10 is default.
 
-#define EUD_TRC_MAX_CHUNKS_PARAMETER        1000            ///Maxchunks largest value allowed is 1000.
+#define EUD_TRC_MAX_CHUNKS_PARAMETER        10000            ///Maxchunks largest value allowed is 1000.
 #define EUD_TRC_MIN_CHUNKS_PARAMETER        1               ///Maxchunks lowest  value allowed is 1.
 
 #define EUD_TRC_MAX_CHUNKSIZE_PARAMETER     1024*1024*100   ///Max allowed chunksize is 100MB.
@@ -153,7 +153,8 @@ public:
     ///Trace peripheral version of usb_read. Passes in the larger Trace_Buffer_IN
     ///instead of usb_buffer_in_ in order to handle larger data sizes.
     virtual USB_ERR_t UsbRead( uint32_t expected_size, ///<Number of bytes to be read
-                                uint8_t *data           ///<Data buffer to populate
+                                uint8_t *data,           ///<Data buffer to populate
+                                DWORD *errcode 
                             );
 
     ///Shadow copy of Trace timeout value in EUD hardware. 

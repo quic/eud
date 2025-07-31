@@ -206,11 +206,10 @@ EUD_ERR_t TraceStopSignal::CheckSignal(uint32_t* signalset_p){
 }
 
 
-USB_ERR_t TraceEudDevice::UsbRead(uint32_t expected_size, uint8_t *data){
+USB_ERR_t TraceEudDevice::UsbRead(uint32_t expected_size, uint8_t *data, DWORD *errcode){
 
     EUD_ERR_t err;
     //uint32_t device = 0;
-    DWORD * errcode = new DWORD;
 
     //TODO wko : retries needed?
     //device = devicetype;

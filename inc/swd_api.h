@@ -168,6 +168,8 @@ swd_bitbang (
     uint32_t* data_p            ///<Pointer to be filled by return data
     );
 
+EXPORT EUD_ERR_t SWDBitBangPack(SwdEudDevice* swd_handle_p, uint32_t SWDBitValues, uint32_t* returndata, bool force_flush);
+
 
 /******************************************************************************************//**
 *
@@ -547,13 +549,25 @@ swd_flush_required(
 
 
 /*********************************************************************************************//**
-*   @brief Issues SWD_DI_TMS commands to switch chip's JTAG to SWD mode
+*   @brief Issues SWD_DI_TMS commands to switch chip's JTAG to SWD mode for adiv5 DAP
+*
+*   Parameters: (PVOID)* EUDHandlerWrap -
+*
+**************************************************************************************************/
+EXPORT EUD_ERR_t                    ///< Error code. 0 for success. Call eud_get_error_string for ASCII description.
+jtag_to_swd_adiv5 (
+    SwdEudDevice* swd_handle_p    ///<Pointer to EUD SWD instance
+    );
+
+
+/*********************************************************************************************//**
+*   @brief Issues SWD_DI_TMS commands to switch chip's JTAG to SWD mode for adiv6 DAP
 *
 *   Parameters: (PVOID)* EUDHandlerWrap - 
 * 
 **************************************************************************************************/
 EXPORT EUD_ERR_t                    ///< Error code. 0 for success. Call eud_get_error_string for ASCII description.
-jtag_to_swd (
+jtag_to_swd_adiv6 (
     SwdEudDevice* swd_handle_p    ///<Pointer to EUD SWD instance
     );
         

@@ -199,6 +199,44 @@ eud_disconnect_usb(
 
 
 
+/**************************************//**
+* @brief Asserts or de-asserts the SRST signal for the 
+*        specified device. The SRST signal is used to 
+*        reset the device.
+*******************************************/ 
+EXPORT EUD_ERR_t        ///< Error code. 0 for success. Call eud_get_error_string for ASCII description. 
+eud_ctl_assert_srst(
+    uint32_t deviceID,   ///<32bit device identifier. A list of attached devices can be retrived from get_device_id_array() 
+    bool value           ///<Boolean value indicating whether to assert (true) or de-assert (false) the SRST signal.
+    );
+
+
+
+/**************************************//**
+* @brief Checks the current status of the SRST signal 
+*        for the specified device. allowing the caller 
+*        to determine if the device is currently in reset.
+*******************************************/
+EXPORT EUD_ERR_t        ///< Error code. 0 for success. Call eud_get_error_string for ASCII description. 
+eud_ctl_check_srst_status(
+    uint32_t deviceID,   ///<32bit device identifier. A list of attached devices can be retrived from get_device_id_array() 
+    uint32_t *payload    ///<Pointer to store the current SRST status of the device.
+    );
+
+
+
+/**************************************//**
+* @brief Asserts or de-asserts the SRST signal for the 
+*        specified device. The TRST signal is used to reset
+*        the JTAG interface.
+*******************************************/
+EXPORT EUD_ERR_t        ///< Error code. 0 for success. Call eud_get_error_string for ASCII description. 
+eud_ctl_assert_trst(
+    uint32_t deviceID,   ///<32bit device identifier. A list of attached devices can be retrived from get_device_id_array() 
+    bool value           ///<Boolean value indicating whether to assert (true) or de-assert (false) the SRST signal.
+    );
+
+
 
 #endif
 

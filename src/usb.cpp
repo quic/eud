@@ -683,13 +683,14 @@ USB_ERR_t UsbDevice::WriteToDevice( PVOID Buffer, DWORD SendSize, DWORD *errcode
 	}
 #endif
 
-    libusb_ret = libusb_bulk_transfer(dev_handle_, EUD_WRITE_ENDPOINT, (unsigned char*) Buffer, SendSize, &BytesWritten, 0);
+	// Added 100 msec timeout required complete bulk transfer
+    libusb_ret = libusb_bulk_transfer(dev_handle_, EUD_WRITE_ENDPOINT, (unsigned char*) Buffer, SendSize, &BytesWritten, 100);
 	// Print the data we are attempting to write regardless of the result
-	QCEUD_Print("WriteToDevice %x; Buffer: 0x", this->dev_);
-	for (DWORD i = 0; i<SendSize; i++) {
-		QCEUD_Print("%x", ((uint8_t*)Buffer)[i]);
-	}
-	QCEUD_Print("; Bytes: %d \n", SendSize);
+	// QCEUD_Print("WriteToDevice %x; Buffer: 0x", this->dev_);
+	// for (DWORD i = 0; i<SendSize; i++) {
+	// 	QCEUD_Print("%x", ((uint8_t*)Buffer)[i]);
+	// }
+	// QCEUD_Print("; Bytes: %d \n", SendSize);
 
 	if (libusb_ret == 0 && BytesWritten == static_cast<int>(SendSize))
 	{
@@ -729,13 +730,14 @@ USB_ERR_t UsbDevice::ReadFromDevice(PVOID Buffer, DWORD ReadSize, DWORD *errcode
 
    else if (ReadSize > 1)
    {
-	   libusb_ret = libusb_bulk_transfer(dev_handle_, EUD_READ_ENDPOINT, (unsigned char*)Buffer, ReadSize, &bytesRead, 0);
+   		// Added timeout 100 msec for libbulk transfer to complete
+	   libusb_ret = libusb_bulk_transfer(dev_handle_, EUD_READ_ENDPOINT, (unsigned char*)Buffer, ReadSize, &bytesRead, 100);
 	   if (libusb_ret == 0 && bytesRead == static_cast<int>(ReadSize)) {
-		   QCEUD_Print("ReadFromDevice %x; Bytes: %d, Buffer: 0x", this->dev_, bytesRead);
-		   for (int i = 0; i < bytesRead; i++) {
-			   QCEUD_Print("%x", ((uint8_t*)Buffer)[i]);
-		   }
-		   QCEUD_Print("\n");
+		//    QCEUD_Print("ReadFromDevice %x; Bytes: %d, Buffer: 0x", this->dev_, bytesRead);
+		//    for (int i = 0; i < bytesRead; i++) {
+		// 	   QCEUD_Print("%x", ((uint8_t*)Buffer)[i]);
+		//    }
+		//    QCEUD_Print("\n");
 		   err = EUD_USB_SUCCESS;
 	   }
 
@@ -780,6 +782,13 @@ std::vector<eud_device_info> *usb_scan_devices(void)
 				eud_device_v->push_back(eud_device);
 			}
 	}
+
+	// Free the device list after getting the required USB devce
+	// TODO: Unable to launch openocd in Windows host machine with the below change
+	// Need to understand the issue in detail, As of now limiting to Linux.
+	#ifdef EUD_LNX_ENV
+		libusb_free_device_list(devs, 1);
+	#endif
 
 	return eud_device_v;
 }
