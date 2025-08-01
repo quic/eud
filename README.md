@@ -25,11 +25,23 @@ making it an invaluable asset for engineers working on complex projects.
 3. libwinpthread-1.dll - pthread library for POSIX thread support.
 4. libstdc++-6.dll - GNU Standard C++ library providing standard C++ library functions. 
 
+On Windows you'll want to grab:
+```
+choco install meson ninja pkgconfiglite
+```
+
+As well as a version of Visual Studio build tools, which are installed as part of the VS installer workflow.
+
 ## Building EUD:
- 
-1. autoreconf --verbose --force --install
-2. ./configure --enable-dll (Ignore --enable-dll if building on linux)
-3. make
+```
+# Windows prerequisite
+mkdir subprojects
+meson wrap install libusb
+
+# On all platforms
+meson build
+ninja -C build
+```
 
 ## License:
 EUD is licensed on the GPL-2.0 OR BSD 3-clause "New" or "Revised" License.  Check out the [LICENSE](LICENSE.txt) for more details.
