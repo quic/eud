@@ -15,6 +15,8 @@
 #include "jtag_eud.h"
 #include <math.h>
 
+inline EUD_ERR_t eud_jtag_generic_opcode(JtagEudDevice* jtg_handle_p, uint8_t opcode, uint32_t payload, uint32_t* response);
+
 //===---------------------------------------------------------------------===//
 //
 // API Access

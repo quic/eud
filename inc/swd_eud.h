@@ -76,15 +76,15 @@
 #define SWD_PCKT_SZ_RECV_SWDCMD_WRITE   0
 
 ///////////////////////////////Endian Option///////////////////////////////////////
-#define SWD_ENDIANOPT_NOP                   BIGENDIAN
-#define SWD_ENDIANOPT_FLUSH                 BIGENDIAN
-#define SWD_ENDIANOPT_FREQ                  BIGENDIAN
-#define SWD_ENDIANOPT_DELAY                 BIGENDIAN
-#define SWD_ENDIANOPT_BITBANG               BIGENDIAN
-#define SWD_ENDIANOPT_DITMS                 BIGENDIAN
-#define SWD_ENDIANOPT_TIMING                BIGENDIAN
-#define SWD_ENDIANOPT_STATUS                BIGENDIAN
-#define SWD_ENDIANOPT_PERIPH_RST            BIGENDIAN
+#define SWD_ENDIANOPT_NOP                   EUD_BIGENDIAN
+#define SWD_ENDIANOPT_FLUSH                 EUD_BIGENDIAN
+#define SWD_ENDIANOPT_FREQ                  EUD_BIGENDIAN
+#define SWD_ENDIANOPT_DELAY                 EUD_BIGENDIAN
+#define SWD_ENDIANOPT_BITBANG               EUD_BIGENDIAN
+#define SWD_ENDIANOPT_DITMS                 EUD_BIGENDIAN
+#define SWD_ENDIANOPT_TIMING                EUD_BIGENDIAN
+#define SWD_ENDIANOPT_STATUS                EUD_BIGENDIAN
+#define SWD_ENDIANOPT_PERIPH_RST            EUD_BIGENDIAN
 
 
 #define SWD_RNW_WRITE_BIT                       0
@@ -106,7 +106,7 @@
 #define SWD_ACK_FAULT_MASK              0x1<<2
 
 //Only allow  status reads/writes for FPGA
-#if FPGA
+#ifdef FPGA
 #define SWD_APPEND_SWDSTATUS_FLAG       1
 #else
 #define SWD_APPEND_SWDSTATUS_FLAG       0

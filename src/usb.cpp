@@ -869,7 +869,7 @@ bool get_dev_info(libusb_device *dev, eud_device_info * eud_device)
 
 #if defined ( EUD_LNX_ENV )
 //FIXME - cause this to be compiled out if DEBUGLEVEL1 not defined
-VOID _cdecl QCEUD_Print(PCHAR Format, ...)
+extern "C" VOID QCEUD_Print(PCHAR Format, ...)
 {
 	#ifndef PERIPHERAL_PRINT_ENABLE
 	return;
@@ -895,7 +895,7 @@ VOID _cdecl QCEUD_Print(PCHAR Format, ...)
 
 
 
-VOID _cdecl QCEUD_Print2(PCHAR Format, ...)
+extern "C" VOID QCEUD_Print2(PCHAR Format, ...)
 {
 	#ifndef PERIPHERAL_PRINT_ENABLE
 	return;
