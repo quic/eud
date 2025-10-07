@@ -1260,8 +1260,8 @@ EUD_ERR_t toggle_peripheral(std::string ctl_devname, uint32_t device_id, uint32_
 
     ///////////////////////////
     //Get set and clear bits depending on device_id.
-    uint32_t ctl_setbits;
-    uint32_t ctl_clearbits;
+    uint32_t ctl_setbits = 0;
+    uint32_t ctl_clearbits = 0;
 
 
     if ((err = get_set_and_clear_bits(device_id, &ctl_setbits, &ctl_clearbits, action))!=0) 
@@ -1288,8 +1288,8 @@ EUD_ERR_t toggle_peripheral(CtlEudDevice* ctl_handle_p, uint32_t device_id, uint
 
     ///////////////////////////
     //Get set and clear bits depending on device_id.
-    uint32_t ctl_setbits;
-    uint32_t ctl_clearbits;
+    uint32_t ctl_setbits = 0;
+    uint32_t ctl_clearbits = 0;
 
 
     if ((err = get_set_and_clear_bits(devicetype, &ctl_setbits, &ctl_clearbits, action))!=0) return err;
@@ -1605,10 +1605,11 @@ EUD_ERR_t DeviceMgr::GetAttachedDevicesString(char* stringbuffer, uint32_t* stri
 }
 EUD_ERR_t force_off_usb_device(uint32_t device_id, uint32_t devicetype) {
 
-    DWORD dwCount = 0, dwWaitResult;
     EUD_ERR_t rvalue = EUD_SUCCESS;
 
     #if defined ( EUD_WIN_ENV )
+    DWORD dwCount = 0, dwWaitResult;
+
     dwWaitResult = WaitForSingleObject(
         DeviceMgr::DeviceMgrInstance()->ghMutex_,
         INFINITE);
@@ -1642,10 +1643,11 @@ EUD_ERR_t force_off_usb_device(uint32_t device_id, uint32_t devicetype) {
 }
 PVOID* initialize_usb_device(uint32_t device_id, uint32_t devicetype, EUD_ERR_t* err_p){
 
-    DWORD dwCount = 0, dwWaitResult;
     PVOID* rvalue_p = NULL;
 
     #if defined ( EUD_WIN_ENV )
+    DWORD dwCount = 0, dwWaitResult;
+
     dwWaitResult = WaitForSingleObject(
         DeviceMgr::DeviceMgrInstance()->ghMutex_,
         INFINITE);
@@ -1683,9 +1685,9 @@ PVOID* initialize_usb_device(uint32_t device_id, uint32_t devicetype, EUD_ERR_t*
 EUD_ERR_t GetDeviceIdByDevMgrName(char* devmgrname, uint32_t* device_id_p){
 
     EUD_ERR_t err = EUD_SUCCESS;
-    DWORD dwWaitResult;
 
     #if defined (EUD_WIN_ENV)
+    DWORD dwWaitResult;
 
     dwWaitResult = WaitForSingleObject(
         DeviceMgr::DeviceMgrInstance()->ghMutex_,
@@ -1727,9 +1729,10 @@ EUD_ERR_t GetDeviceIdByDevMgrName(char* devmgrname, uint32_t* device_id_p){
 EUD_ERR_t GetCtlPeripheralByPeripheralPtr(PVOID* EudDevice, char* ctl_peripheral_devname){
 
     EUD_ERR_t err = EUD_SUCCESS;
-    DWORD dwWaitResult;
 
     #if defined (EUD_WIN_ENV)
+    DWORD dwWaitResult;
+
     dwWaitResult = WaitForSingleObject(
         DeviceMgr::DeviceMgrInstance()->ghMutex_,
         INFINITE);
@@ -1767,10 +1770,10 @@ EUD_ERR_t GetCtlPeripheralByPeripheralPtr(PVOID* EudDevice, char* ctl_peripheral
 EXPORT EUD_ERR_t get_device_id_array(uint32_t* array_p, uint32_t* length_p){
 
     EUD_ERR_t err = EUD_SUCCESS;
-    DWORD dwWaitResult;
-
 
     #if defined (EUD_WIN_ENV)
+    DWORD dwWaitResult;
+
     dwWaitResult = WaitForSingleObject(
         DeviceMgr::DeviceMgrInstance()->ghMutex_,
         INFINITE);
@@ -1805,11 +1808,12 @@ EXPORT EUD_ERR_t get_device_id_array(uint32_t* array_p, uint32_t* length_p){
 }
 
 EXPORT EUD_ERR_t GetAttachedDevicesString(char* stringbuffer, uint32_t* stringsize_p){
-
     EUD_ERR_t err = EUD_SUCCESS;
-    DWORD dwCount = 0, dwWaitResult;
-    bool exitflag = false;
+
     #if defined (EUD_WIN_ENV)
+    bool exitflag = false;
+    DWORD dwCount = 0, dwWaitResult;
+
         while ((dwCount < 20) && (exitflag == false)){
 
             dwWaitResult = WaitForSingleObject(
@@ -1887,10 +1891,11 @@ EUD_ERR_t GetCtlPeripheralStringByDeviceId(uint32_t device_id, char* ctl_periphe
 CtlEudDevice* get_ctl_peripheral_by_device_id(uint32_t device_id, EUD_ERR_t* err_p){
 
    // EUD_ERR_t err = EUD_SUCCESS;
-    DWORD dwWaitResult;
-    CtlEudDevice* rvalue_p;
+    CtlEudDevice* rvalue_p = NULL;
 
     #if defined (EUD_WIN_ENV)
+    DWORD dwWaitResult;
+
     dwWaitResult = WaitForSingleObject(
         DeviceMgr::DeviceMgrInstance()->ghMutex_,
         INFINITE);
@@ -1921,7 +1926,6 @@ CtlEudDevice* get_ctl_peripheral_by_device_id(uint32_t device_id, EUD_ERR_t* err
     #endif
 
     return rvalue_p;
-
 }
 
 /*

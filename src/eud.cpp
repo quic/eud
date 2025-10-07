@@ -310,6 +310,8 @@ USB_ERR_t EudDevice::UsbOpen(const char * devmgrname, uint32_t devicetype_local,
     //  eud_set_last_usb_error(error_code);
     
     return usb_attached;
+#else
+    return EUD_USB_ERROR;
 #endif
 }
 
@@ -809,7 +811,7 @@ inline void pack_uint32_to_uint8_array(uint32_t data32, uint8_t* data8_p){
 
 inline void unpack_uint8_to_uint32_array(uint32_t* data32_p, uint8_t* data8_p, uint32_t endianoption){
     *data32_p = 0;
-    if (endianoption == LITTLEENDIAN){
+    if (endianoption == EUD_LITTLEENDIAN){
         *data32_p = (uint32_t)(*(data8_p + 3));
         *data32_p += (uint32_t)(*(data8_p + 2) << 8);
         *data32_p += (uint32_t)(*(data8_p + 1) << 16);

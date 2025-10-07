@@ -149,13 +149,13 @@ VOID _cdecl QCEUD_Print2(const char* Format, ...);
 * @brief Generic debug print function for USB packet debug
 *
 ***************************************************************/  
-VOID _cdecl QCEUD_Print(PCHAR Format, ...);
+extern "C" VOID QCEUD_Print(PCHAR Format, ...);
 /***********************************************************//**
 *
 * @brief Additional debug print function for USB packet debug
 *
 ***************************************************************/  
-VOID _cdecl QCEUD_Print2(PCHAR Format, ...);
+extern "C" VOID QCEUD_Print2(PCHAR Format, ...);
 
 #endif  // #if defined (EUD_LNX_ENV)
 

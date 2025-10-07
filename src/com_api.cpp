@@ -13,6 +13,8 @@
 
 #define EUD_DEVICE_DECL 1
 
+#include <unistd.h>
+
 #include "eud.h"
 #include "com_eud.h"
 
@@ -226,7 +228,7 @@ EXPORT EUD_ERR_t test_function(uint32_t deviceID, uint8_t ExecEnvID){
 
         */
         //Sleep for poll_value if no data is ready.
-        if (data_ready == FALSE) Sleep(poll_value);
+        if (data_ready == FALSE) usleep(poll_value*1000);
         
     }
 

@@ -74,8 +74,8 @@ typedef int32_t USB_ERR_t;
 #define ENABLE                          1   ///<Used by get_set_and_clear_bits to determine on/off toggling of EUD peripherals.
 #define DISABLE                         0   ///<Used by get_set_and_clear_bits to determine on/off toggling of EUD peripherals.
 
-#define LITTLEENDIAN                    1
-#define BIGENDIAN                       0
+#define EUD_LITTLEENDIAN                1
+#define EUD_BIGENDIAN                   0
 
 #define USB_OUT_BUFFER_SIZE             1024 
 
