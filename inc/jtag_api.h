@@ -39,16 +39,6 @@
 
 /**************************************//**
 *
-*   @brief Reset JTAG peripheral. JTAG peripheral should keep enumerated on USB.
-*
-*******************************************/                        
-EXPORT EUD_ERR_t				///< Error code. 0 for success. Call eud_get_error_string for ASCII description.
-jtag_peripheral_reset(
-    JtagEudDevice* jtg_handle_p	///<Pointer to EUD Handle instance
-    );
-
-/**************************************//**
-*
 *   @brief Causes the JTAG Peripheral to flush its IN buffer to the PC after next IN token.
 *	The JTAG Peripheral signals the completion of the flush command to the PC by sending a partial or zero length packet.
 *
@@ -282,8 +272,6 @@ jtag_read_frequency(
 
 
 //QCOM_SNIP_BEGIN
-inline EUD_ERR_t eud_jtag_generic_opcode(JtagEudDevice* jtg_handle_p, uint8_t opcode, uint32_t payload, uint32_t* response);
-
 
 EXPORT EUD_ERR_t jtag_eud_speed(JtagEudDevice* jtg_handle_p, uint32_t speed);
 EXPORT EUD_ERR_t jtag_eud_bitbang(	JtagEudDevice* jtg_handle_p, 

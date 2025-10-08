@@ -144,22 +144,22 @@
 
 
 ///////////////////////Endian option/////////////////////////
-#define CMD_JTAG_ENDIANOPT_NOP                  BIGENDIAN
-#define CMD_JTAG_ENDIANOPT_FLUSH                BIGENDIAN
-#define CMD_JTAG_ENDIANOPT_FREQ_WR              BIGENDIAN
-#define CMD_JTAG_ENDIANOPT_DELAY                BIGENDIAN
-#define CMD_JTAG_ENDIANOPT_BITBANG              BIGENDIAN
-#define CMD_JTAG_ENDIANOPT_TMS                  BIGENDIAN
-#define CMD_JTAG_ENDIANOPT_NBIT_TOSS            BIGENDIAN
-#define CMD_JTAG_ENDIANOPT_NBIT_KEEP            BIGENDIAN
-#define CMD_JTAG_ENDIANOPT_NBIT_END_TOSS        BIGENDIAN
-#define CMD_JTAG_ENDIANOPT_NBIT_END_KEEP        BIGENDIAN
-#define CMD_JTAG_ENDIANOPT_32BIT_TOSS           BIGENDIAN
-#define CMD_JTAG_ENDIANOPT_32BIT_KEEP           BIGENDIAN
-#define CMD_JTAG_ENDIANOPT_32BIT_END_TOSS       BIGENDIAN
-#define CMD_JTAG_ENDIANOPT_32BIT_END_KEEP       BIGENDIAN
-#define CMD_JTAG_ENDIANOPT_PERIPH_RST           BIGENDIAN
-#define CMD_JTAG_ENDIANOPT_FREQ_RD              BIGENDIAN
+#define CMD_JTAG_ENDIANOPT_NOP                  EUD_BIGENDIAN
+#define CMD_JTAG_ENDIANOPT_FLUSH                EUD_BIGENDIAN
+#define CMD_JTAG_ENDIANOPT_FREQ_WR              EUD_BIGENDIAN
+#define CMD_JTAG_ENDIANOPT_DELAY                EUD_BIGENDIAN
+#define CMD_JTAG_ENDIANOPT_BITBANG              EUD_BIGENDIAN
+#define CMD_JTAG_ENDIANOPT_TMS                  EUD_BIGENDIAN
+#define CMD_JTAG_ENDIANOPT_NBIT_TOSS            EUD_BIGENDIAN
+#define CMD_JTAG_ENDIANOPT_NBIT_KEEP            EUD_BIGENDIAN
+#define CMD_JTAG_ENDIANOPT_NBIT_END_TOSS        EUD_BIGENDIAN
+#define CMD_JTAG_ENDIANOPT_NBIT_END_KEEP        EUD_BIGENDIAN
+#define CMD_JTAG_ENDIANOPT_32BIT_TOSS           EUD_BIGENDIAN
+#define CMD_JTAG_ENDIANOPT_32BIT_KEEP           EUD_BIGENDIAN
+#define CMD_JTAG_ENDIANOPT_32BIT_END_TOSS       EUD_BIGENDIAN
+#define CMD_JTAG_ENDIANOPT_32BIT_END_KEEP       EUD_BIGENDIAN
+#define CMD_JTAG_ENDIANOPT_PERIPH_RST           EUD_BIGENDIAN
+#define CMD_JTAG_ENDIANOPT_FREQ_RD              EUD_BIGENDIAN
 ////////////////////masks,shifts//////////////////////
 #define EUD_JTAG_FREQ_MASK                      0x3
 
@@ -172,7 +172,6 @@
 
 
 ///////////////////API and software defines///////////////////////
-//#define JTAG_BIGENDIAN                1
 #define JTG_LIMITED_INIT_OPTION         1
 #define INIT_JTG_ALLOWED_OPTIONS_MSK    JTG_LIMITED_INIT_OPTION //Only 1 option allowed at this time.
 #define JTG_CMD_DELAY_MAX               0xFF
@@ -262,9 +261,6 @@ class EudJtagData{
 public:
     EudJtagData(){
         number_ = 0;
-        //tdi = new uint16_t[TDI_DATA_IN_MAX];
-        //tms = new uint16_t[TMS_DATA_IN_MAX];
-        //tdo = new uint32_t[TDO_BUFFER_MAX];
         tdi_ = new uint8_t[TDI_DATA_IN_MAX];
         tms_ = new uint8_t[TMS_DATA_IN_MAX];
         tdo_ = new uint8_t[TDO_DATA_IN_MAX];
@@ -275,9 +271,9 @@ public:
 
     }
     ~EudJtagData(){
-        delete tdi_;
-        delete tms_;
-        delete tdo_;
+        delete [] tdi_;
+        delete [] tms_;
+        delete [] tdo_;
     }
 
     uint8_t *tdi_;

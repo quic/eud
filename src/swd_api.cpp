@@ -585,9 +585,6 @@ EXPORT EUD_ERR_t swd_read(SwdEudDevice *swd_handle, uint32_t APnDP, uint32_t A2_
 	if ( (err = queue_swd_packet(swd_handle, swd_cmd.cmd, (uint32_t)0, returndata)) != 0 )
 		return err;
 
-	// QCEUD_Print("swd_read: Psot Queue_swd_packet,h \n", );
-	//	QCEUD_Print("swd_read: Post Queue_swd_packe: swd_handle->eud_queue_p->bufferstatus: %d",swd_handle->eud_queue_p->bufferstatus);
-
 	/* If full, re-queue after a flush*/
 	if ((swd_handle->eud_queue_p_->buffer_status_ == QUEUE_FULL_COMMAND_NOT_QUEUED))
 	{
@@ -754,7 +751,7 @@ EXPORT EUD_ERR_t send_data_via_bitbang(SwdEudDevice* swd_handle_p, uint64_t SWDB
 
 		value += (bit << idx);
 	}
-	delete returndata;
+	delete [] returndata;
 	return err;
 }
 
@@ -986,13 +983,13 @@ EXPORT EUD_ERR_t jtag_to_swd_adiv5(SwdEudDevice *swd_handle_p)
 	//	return eud_set_last_error(EUD_SWD_ERR_SWD_TO_JTAG_ALREADY_DONE);
 	// }
 
-	if ((err = swd_di_tms(swd_handle_p, 0xFFFF, 0x32))!=0)
+	if ((err = swd_di_tms(swd_handle_p, 0xFFFF, 0x32)) != EUD_SUCCESS)
 		return err;
 	// uint8_t swd_di_tms2[] = { 0x9E, 0xE7, 0x0F, 0x00 }; //Note that these are reverse endian
-	if ((err = swd_di_tms(swd_handle_p, 0xE79E, 0x0F))!=0)
+	if ((err = swd_di_tms(swd_handle_p, 0xE79E, 0x0F)) != EUD_SUCCESS)
 		return err;
 	// uint8_t swd_di_tms3[] = { 0xFF, 0xFF, 0x32, 0x00 }; //Note that these are reverse endian
-	if ((err = swd_di_tms(swd_handle_p, 0xFFFF, 0x32))!=0)
+	if ((err = swd_di_tms(swd_handle_p, 0xFFFF, 0x32)) != EUD_SUCCESS)
 		return err;
 
 	swd_handle_p->swd_to_jtag_operation_done_ = TRUE;
@@ -1002,7 +999,6 @@ EXPORT EUD_ERR_t jtag_to_swd_adiv5(SwdEudDevice *swd_handle_p)
 
 EXPORT EUD_ERR_t jtag_to_swd_adiv6(SwdEudDevice *swd_handle_p)
 {
-
 	EUD_ERR_t err = EUD_SUCCESS;
 
 	if (swd_handle_p == NULL)
@@ -1011,15 +1007,18 @@ EXPORT EUD_ERR_t jtag_to_swd_adiv6(SwdEudDevice *swd_handle_p)
 	}
 
 	//cycles TMS high
-	if (err = send_data_via_bitbang(swd_handle_p, 0x1F, 0x05)) return err;
+	err = send_data_via_bitbang(swd_handle_p, 0x1F, 0x05);
+	if (err != EUD_SUCCESS) return err;
 
 	//Activation sequence
-	if (err = send_data_via_bitbang(swd_handle_p, 0x2EEEEEE6, 31)) return err;
+	err = send_data_via_bitbang(swd_handle_p, 0x2EEEEEE6, 31);
+	if (err != EUD_SUCCESS) return err;
 
 	//Leave dormant state
     // -----------------------------
     // 8 cycles TMS high
-	if (err = send_data_via_bitbang(swd_handle_p, 0xFF, 8)) return err;
+	err = send_data_via_bitbang(swd_handle_p, 0xFF, 8);
+	if (err != EUD_SUCCESS) return err;
 
     //send_data_via_bitbang(swd_handle_p, 0x49CF9046A9B4A16197F5BBC745703D98, 128);      // MSB first
 	send_data_via_bitbang(swd_handle_p, 0x49CF9046A9B4A161, 64);      // MSB first
