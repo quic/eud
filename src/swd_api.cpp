@@ -405,7 +405,7 @@ EXPORT EUD_ERR_t swd_flush_buffers(SwdEudDevice *swd_handle_p, uint32_t flushopt
 	swd_command_tempflag = swd_handle_p->eud_queue_p_->swd_command_flag_;
 
 
-	queue_swd_packet_special(swd_handle_p, SWD_CMD_STATUS, (uint32_t)NULL, &swd_status);
+	queue_swd_packet_special(swd_handle_p, SWD_CMD_STATUS, 0, &swd_status);
 	// Write and read bytes if required.
 	if (flushoption == 1)
 	{
@@ -415,14 +415,14 @@ EXPORT EUD_ERR_t swd_flush_buffers(SwdEudDevice *swd_handle_p, uint32_t flushopt
 #ifdef SWD_DEBUG_ON
 			QCEUD_Print("Queue FLUSH cmd, since there are Reads pending \n");
 #endif
-			queue_swd_packet_special(swd_handle_p, SWD_CMD_FLUSH, (uint32_t)NULL, (uint32_t)NULL);
+			queue_swd_packet_special(swd_handle_p, SWD_CMD_FLUSH, 0, 0);
 			// readFlush = true;
 		}
 
 #ifdef SWD_DEBUG_ON
 		QCEUD_Print("Queue NULL cmd \n");
 #endif
-		// queue_swd_packet_special(swd_handle_p, SWD_CMD_NOP, (uint32_t)NULL, (uint32_t)NULL);
+		// queue_swd_packet_special(swd_handle_p, SWD_CMD_NOP, 0, 0);
 #ifdef SWD_DEBUG_ON
 		QCEUD_Print(" Call UsbWriteRead()\n");
 		QCEUD_Print("Expected bytes to be Written: %d, Expected bytes to be Read: %d \n", swd_handle_p->eud_queue_p->raw_write_buffer_idx, swd_handle_p->eud_queue_p->read_expected_bytes);
@@ -499,7 +499,7 @@ EXPORT EUD_ERR_t swd_flush_buffers(SwdEudDevice *swd_handle_p, uint32_t flushopt
 
 EXPORT int swdGetDeviceID(SwdEudDevice *swd_handle_p, uint32_t &deviceID)
 {
-	return queue_swd_packet_special(swd_handle_p, 0x9, (uint32_t)NULL, &deviceID);
+	return queue_swd_packet_special(swd_handle_p, 0x9, 0, &deviceID);
 }
 /*************************************************************************************
  *   @brief API to perform an SWD Write.
@@ -934,8 +934,8 @@ EXPORT EUD_ERR_t swd_get_status(SwdEudDevice *swd_handle_p, uint32_t forcestatus
 			return err;
 		// Write status opcode and flush
 		// TODO - make  sure  all fields are reset.
-		queue_swd_packet(swd_handle_p, SWD_CMD_STATUS, (uint32_t)NULL, &swd_handle_p->swd_last_status_);
-		queue_swd_packet(swd_handle_p, SWD_CMD_FLUSH, (uint32_t)NULL, NULL);
+		queue_swd_packet(swd_handle_p, SWD_CMD_STATUS, (uint32_t)0, &swd_handle_p->swd_last_status_);
+		queue_swd_packet(swd_handle_p, SWD_CMD_FLUSH, (uint32_t)0, NULL);
 
 		if ((err = swd_flush_buffers(swd_handle_p, 1))!=0)
 			return err;
