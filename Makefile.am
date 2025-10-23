@@ -15,7 +15,7 @@ endif
 library_includedir = inc 
 
 libeud_la_SOURCES =  			\
-    src/eud_error_defines.cpp  		\
+    src/eud_error_defines.cpp 	\
 	src/usb.cpp              	\
 	src/device_manager.cpp    	\
 	src/general_api_processing.cpp 	\
@@ -24,7 +24,6 @@ libeud_la_SOURCES =  			\
 	src/eud_api.cpp          	\
 	src/jtag_eud.cpp          	\
 	src/jtag_api.cpp          	\
-	src/jtag_test.cpp		\
 	src/com_eud.cpp          	\
 	src/com_api.cpp           	\
 	src/ctl_eud.cpp          	\
@@ -32,7 +31,8 @@ libeud_la_SOURCES =  			\
 	src/trc_eud.cpp          	\
 	src/trc_api.cpp        		\
 	src/swd_eud.cpp          	\
-	src/swd_api.cpp           
+	src/swd_api.cpp
+#	src/jtag_test.cpp		
 
 libeud_la_CPPFLAGS = -Wall -Wno-narrowing -I $(library_includedir)
 

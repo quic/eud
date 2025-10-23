@@ -757,7 +757,7 @@ EXPORT CtlEudDevice* eud_initialize_device_ctl(uint32_t deviceID, uint32_t optio
     return ctl_handle_p;
 }
 
-
+#if 0  // TBD
 EXPORT JtagEudDevice* eud_initialize_device_jtag(uint32_t deviceID, uint32_t options, EUD_ERR_t * errcode) {
     
     //
@@ -816,6 +816,7 @@ EXPORT JtagEudDevice* eud_initialize_device_jtag(uint32_t deviceID, uint32_t opt
     //Return the initialized peripheral handle
     return jtg_handle;
 }
+#endif
 
 #define MAX_ERR_STRING_SIZE 200
 

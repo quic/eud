@@ -51,13 +51,13 @@
 #define TRC_PCKT_SZ_RECV_PERIPH_RST     0
 
 ////////////////////Endian  Option///////////////////
-#define TRC_ENDIANOPT_NOP                   BIGENDIAN
-#define TRC_ENDIANOPT_FLUSH                 BIGENDIAN
-#define TRC_ENDIANOPT_TRNS_LEN              BIGENDIAN
-#define TRC_ENDIANOPT_TRNS_TMOUT            BIGENDIAN
-#define TRC_ENDIANOPT_TOSS                  BIGENDIAN
-#define TRC_ENDIANOPT_KEEP                  BIGENDIAN
-#define TRC_ENDIANOPT_PERIPH_RST            BIGENDIAN
+#define TRC_ENDIANOPT_NOP                   EUD_BIGENDIAN
+#define TRC_ENDIANOPT_FLUSH                 EUD_BIGENDIAN
+#define TRC_ENDIANOPT_TRNS_LEN              EUD_BIGENDIAN
+#define TRC_ENDIANOPT_TRNS_TMOUT            EUD_BIGENDIAN
+#define TRC_ENDIANOPT_TOSS                  EUD_BIGENDIAN
+#define TRC_ENDIANOPT_KEEP                  EUD_BIGENDIAN
+#define TRC_ENDIANOPT_PERIPH_RST            EUD_BIGENDIAN
 
 #define TRC_NUM_OPCODES                 7
 /////////////////Trace API masks and defaults/////////////
@@ -152,7 +152,7 @@ public:
     #endif
     ///Trace peripheral version of usb_read. Passes in the larger Trace_Buffer_IN
     ///instead of usb_buffer_in_ in order to handle larger data sizes.
-    virtual USB_ERR_t UsbRead( uint32_t expected_size, ///<Number of bytes to be read
+    USB_ERR_t TraceUsbRead( uint32_t expected_size, ///<Number of bytes to be read
                                 uint8_t *data,           ///<Data buffer to populate
                                 DWORD *errcode 
                             );

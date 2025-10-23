@@ -45,8 +45,6 @@ TraceEudDevice* trc_device = 0x0;
 */
 EXPORT EUD_ERR_t eud_trace_device_init(uint32_t device_id, uint32_t trns_len, uint32_t trns_tmout, uint32_t on_time)
 {
-    uint32_t arr[100] = {0};
-    uint32_t len = 0U; 
     EUD_ERR_t err = EUD_SUCCESS;
 
     //Initialising Trace Device. 
@@ -128,7 +126,7 @@ EXPORT EUD_ERR_t eud_trace_config(TraceEudDevice* trace_handle_p, trace_config_d
     // Flush the ATB buffer
     for (int i = 0; i < 2; i++) {
         QCEUD_Print ("Initial buffer read\n");
-        err = trace_handle_p->UsbRead (trace_handle_p->current_trace_transaction_length_ * 2, (tracedata), errcode);
+        err = trace_handle_p->TraceUsbRead (trace_handle_p->current_trace_transaction_length_ * 2, (tracedata), errcode);
 
         if(err != EUD_SUCCESS)
         {
@@ -266,7 +264,9 @@ BOOL CtrlHandler(DWORD fdwCtrlType)
     default:
         return FALSE;
     }
-#endif    
+#else 
+    return FALSE;
+#endif
 }
 
 
@@ -324,7 +324,7 @@ EXPORT EUD_ERR_t eud_start_tracing (TraceEudDevice* trace_handle_p, trace_config
     while((difftime(curr_time, start_time)) < trace_cfg->trace_on_time) {
         //Start new trace file.
         data_captured = 0;
-        err = trace_handle_p->UsbRead(trace_handle_p->current_trace_transaction_length_, (tracedata), errcode);     
+        err = trace_handle_p->TraceUsbRead(trace_handle_p->current_trace_transaction_length_, (tracedata), errcode);     
         if(*errcode != LIBUSB_SUCCESS)
         {
             QCEUD_Print("Read Error: %s \n", (PCHAR)libusb_error_name(*errcode));
@@ -353,7 +353,7 @@ EXPORT EUD_ERR_t eud_start_tracing (TraceEudDevice* trace_handle_p, trace_config
     QCEUD_Print("\n%s", asctime(ptr));
     file.close();
     QCEUD_Print("\nTrace collection finished and trace logs are saved.");
-    delete tracedata;
+    delete [] tracedata;
     delete errcode;
     return err;
 }
@@ -393,7 +393,6 @@ EXPORT EUD_ERR_t eud_stop_trace (TraceEudDevice* trace_handle_p) {
 
 EXPORT EUD_ERR_t eud_close_trace (TraceEudDevice* trace_handle_p)
 {
-    EUD_ERR_t err = EUD_SUCCESS;
 
     //ctl->close trace
     if (trace_handle_p == NULL) {
@@ -402,6 +401,7 @@ EXPORT EUD_ERR_t eud_close_trace (TraceEudDevice* trace_handle_p)
     
     //myhandle->TraceSignal->writedata(TRC_MESSAGE_CLOSE_TRACE);
     #if defined ( EUD_WIN_ENV )
+    EUD_ERR_t err = EUD_SUCCESS;
     err = trace_handle_p->trace_stop_signal_->SetSignal();
     if (err != EUD_SUCCESS) {
         return err;
