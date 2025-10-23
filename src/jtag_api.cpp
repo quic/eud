@@ -15,7 +15,84 @@
 #include "jtag_eud.h"
 #include <math.h>
 
-inline EUD_ERR_t eud_jtag_generic_opcode(JtagEudDevice* jtg_handle_p, uint8_t opcode, uint32_t payload, uint32_t* response);
+inline EUD_ERR_t eud_jtag_generic_opcode(JtagEudDevice* jtg_handle_p, uint8_t opcode, uint32_t payload, uint32_t* response){
+
+    EUD_ERR_t err;
+
+    if (jtg_handle_p == NULL){
+        return eud_set_last_error(EUD_ERR_BAD_HANDLE_PARAMETER);
+    }
+    if (opcode > JTG_NUM_OPCODES){
+        return eud_set_last_error(EUD_ERR_BAD_PARAMETER);
+    }
+
+    if (jtg_handle_p->jtag_check_opcode_queuable_table_[opcode]){
+        if ( (err = jtg_handle_p->QueueCommand(opcode, payload, response)) != 0 ) return err;
+        if ( (err = jtg_handle_p->ProcessBuffers()) != 0 ) return err;
+    }
+    else{
+        if ( (err = jtg_handle_p->WriteCommand((uint32_t)opcode, payload, response)) != 0) return err;
+    }
+
+    return err;
+
+}
+#ifdef old_jtgcmd
+
+    //Should not have anything in the USB Write queue pending.
+    //Don't expect this error to occur.
+    if ((jtg_handle_p->USB_Write_Index > 0) && (jtg_handle_p->handle->Mode == IMMEDIATEWRITEMODE)){
+        return eud_set_last_error(EUD_JTG_ERR_REQUIRE_FLUSH);
+    }
+
+    uint32_t payload_sz, response_sz;
+    payload_sz = jtg_handle_p->Periph_PayloadSize_Table[opcode];
+    response_sz = jtg_handle_p->Periph_ResponseSize_Table[opcode];
+
+
+    jtg_handle_p->USB_Write_Buffer[jtg_handle_p->USB_Write_Index] = opcode;
+    if (payload_sz > 0){
+
+        jtg_handle_p->USB_Write_Buffer[jtg_handle_p->USB_Write_Index + 1] = payload     & (0xFF);
+        jtg_handle_p->USB_Write_Buffer[jtg_handle_p->USB_Write_Index + 2] = payload>>8  & (0xFF);
+        jtg_handle_p->USB_Write_Buffer[jtg_handle_p->USB_Write_Index + 3] = payload>>16 & (0xFF);
+        jtg_handle_p->USB_Write_Buffer[jtg_handle_p->USB_Write_Index + 4] = payload>>24 & (0xFF);
+
+    }
+    jtg_handle_p->USB_Write_Index += payload_sz;
+
+    if ((jtg_handle_p->Mode == IMMEDIATEWRITEMODE)&&(response_sz > 0)){
+        jtg_handle_p->USB_Write_Index += JTG_PCKT_SZ_SEND_FLUSH;
+        jtg_handle_p->USB_Write_Buffer[jtg_handle_p->USB_Write_Index-1] = JTG_CMD_FLUSH;
+        jtg_handle_p->USB_Read_Expected_Bytes += response_sz;
+    }
+
+    
+    //TODO - wrap this in a try-catch block to catch pointer violations
+    //TODO - Implement buffermodes  other than IMMEDIATEWRITE, this logic won't work.
+    if (err = jtg_handle_p->handle->UsbWriteRead(   jtg_handle_p->USB_Write_Index, 
+                                                    jtg_handle_p->USB_Write_Buffer,
+                                                    jtg_handle_p->USB_Read_Expected_Bytes,
+                                                    jtg_handle_p->USB_Read_Buffer
+                                                    )) return err;
+    
+    if (jtg_handle_p->handle->Mode == IMMEDIATEWRITEMODE){
+        jtg_handle_p->USB_Write_Index = 0;
+        jtg_handle_p->USB_Read_Expected_Bytes = 0;
+    }
+
+    if ((response_sz > 0) && (jtg_handle_p->handle->Mode == IMMEDIATEWRITEMODE)){
+        *response = jtg_handle_p->USB_Read_Buffer[jtg_handle_p->USB_Read_Index + 1];
+        *response += jtg_handle_p->USB_Read_Buffer[jtg_handle_p->USB_Write_Index + 2] << 8;
+        *response += jtg_handle_p->USB_Read_Buffer[jtg_handle_p->USB_Write_Index + 3] << 16;
+        *response += jtg_handle_p->USB_Read_Buffer[jtg_handle_p->USB_Write_Index + 4] << 24;
+    }
+
+    return EUD_SUCCESS;
+}
+
+
+#endif
 
 //===---------------------------------------------------------------------===//
 //
@@ -137,87 +214,6 @@ EXPORT EUD_ERR_t jtag_read_frequency(JtagEudDevice* jtg_handle_p, uint32_t* resp
 }
 
 
-
-
-
-inline EUD_ERR_t eud_jtag_generic_opcode(JtagEudDevice* jtg_handle_p, uint8_t opcode, uint32_t payload, uint32_t* response){
-
-    EUD_ERR_t err;
-
-    if (jtg_handle_p == NULL){
-        return eud_set_last_error(EUD_ERR_BAD_HANDLE_PARAMETER);
-    }
-    if (opcode > JTG_NUM_OPCODES){
-        return eud_set_last_error(EUD_ERR_BAD_PARAMETER);
-    }
-
-    if (jtg_handle_p->jtag_check_opcode_queuable_table_[opcode]){
-        if ( (err = jtg_handle_p->QueueCommand(opcode, payload, response)) != 0 ) return err;
-        if ( (err = jtg_handle_p->ProcessBuffers()) != 0 ) return err;
-    }
-    else{
-        if ( (err = jtg_handle_p->WriteCommand((uint32_t)opcode, payload, response)) != 0) return err;
-    }
-
-    return err;
-
-}
-#ifdef old_jtgcmd
-
-    //Should not have anything in the USB Write queue pending.
-    //Don't expect this error to occur.
-    if ((jtg_handle_p->USB_Write_Index > 0) && (jtg_handle_p->handle->Mode == IMMEDIATEWRITEMODE)){
-        return eud_set_last_error(EUD_JTG_ERR_REQUIRE_FLUSH);
-    }
-
-    uint32_t payload_sz, response_sz;
-    payload_sz = jtg_handle_p->Periph_PayloadSize_Table[opcode];
-    response_sz = jtg_handle_p->Periph_ResponseSize_Table[opcode];
-
-
-    jtg_handle_p->USB_Write_Buffer[jtg_handle_p->USB_Write_Index] = opcode;
-    if (payload_sz > 0){
-
-        jtg_handle_p->USB_Write_Buffer[jtg_handle_p->USB_Write_Index + 1] = payload     & (0xFF);
-        jtg_handle_p->USB_Write_Buffer[jtg_handle_p->USB_Write_Index + 2] = payload>>8  & (0xFF);
-        jtg_handle_p->USB_Write_Buffer[jtg_handle_p->USB_Write_Index + 3] = payload>>16 & (0xFF);
-        jtg_handle_p->USB_Write_Buffer[jtg_handle_p->USB_Write_Index + 4] = payload>>24 & (0xFF);
-
-    }
-    jtg_handle_p->USB_Write_Index += payload_sz;
-
-    if ((jtg_handle_p->Mode == IMMEDIATEWRITEMODE)&&(response_sz > 0)){
-        jtg_handle_p->USB_Write_Index += JTG_PCKT_SZ_SEND_FLUSH;
-        jtg_handle_p->USB_Write_Buffer[jtg_handle_p->USB_Write_Index-1] = JTG_CMD_FLUSH;
-        jtg_handle_p->USB_Read_Expected_Bytes += response_sz;
-    }
-
-    
-    //TODO - wrap this in a try-catch block to catch pointer violations
-    //TODO - Implement buffermodes  other than IMMEDIATEWRITE, this logic won't work.
-    if (err = jtg_handle_p->handle->UsbWriteRead(   jtg_handle_p->USB_Write_Index, 
-                                                    jtg_handle_p->USB_Write_Buffer,
-                                                    jtg_handle_p->USB_Read_Expected_Bytes,
-                                                    jtg_handle_p->USB_Read_Buffer
-                                                    )) return err;
-    
-    if (jtg_handle_p->handle->Mode == IMMEDIATEWRITEMODE){
-        jtg_handle_p->USB_Write_Index = 0;
-        jtg_handle_p->USB_Read_Expected_Bytes = 0;
-    }
-
-    if ((response_sz > 0) && (jtg_handle_p->handle->Mode == IMMEDIATEWRITEMODE)){
-        *response = jtg_handle_p->USB_Read_Buffer[jtg_handle_p->USB_Read_Index + 1];
-        *response += jtg_handle_p->USB_Read_Buffer[jtg_handle_p->USB_Write_Index + 2] << 8;
-        *response += jtg_handle_p->USB_Read_Buffer[jtg_handle_p->USB_Write_Index + 3] << 16;
-        *response += jtg_handle_p->USB_Read_Buffer[jtg_handle_p->USB_Write_Index + 4] << 24;
-    }
-
-    return EUD_SUCCESS;
-}
-
-
-#endif
 /////////////////Other JTAG API's. Potentially to deprecate?//////////////////
 
 EXPORT EUD_ERR_t eud_jtag_trst(JtagEudDevice* jtg_handle_p){
