@@ -152,7 +152,7 @@ public:
     #endif
     ///Trace peripheral version of usb_read. Passes in the larger Trace_Buffer_IN
     ///instead of usb_buffer_in_ in order to handle larger data sizes.
-    USB_ERR_t TraceUsbRead( uint32_t expected_size, ///<Number of bytes to be read
+    virtual USB_ERR_t UsbRead( uint32_t expected_size, ///<Number of bytes to be read
                                 uint8_t *data,           ///<Data buffer to populate
                                 DWORD *errcode 
                             );

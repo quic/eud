@@ -38,11 +38,10 @@ TraceEudDevice::TraceEudDevice(){
     //Create timestamped directory
     std::ostringstream oss;
 
-    struct tm * now = new struct tm;
-
-    #if defined ( EUD_WIN_ENV ) 
     time_t t = time(0);   // get time now
-    localtime_s(now,&t);
+    struct tm * now = new struct tm;
+    #if defined ( EUD_WIN_ENV ) 
+        localtime_s(now,&t);
     #endif
     
     oss << EUD_TRC_DEFAULT_OUTPUTDIR    << '-'
@@ -88,8 +87,6 @@ TraceEudDevice::TraceEudDevice(){
     
     periph_max_opcode_value_ = TRC_NUM_OPCODES;
 }
-
-
 TraceEudDevice::~TraceEudDevice(){
     //Write data for any threads to catch to close trace.
     //TraceSignal->writedata(TRC_MESSAGE_CLOSE_TRACE);
@@ -171,8 +168,6 @@ EUD_ERR_t TraceSignaller::WriteData(uint32_t data){
     //}
     //TODO - handle exceptions
     return EUD_SUCCESS;
-#else 
-    return EUD_GENERIC_FAILURE;
 #endif    
 }
 
@@ -181,10 +176,9 @@ EUD_ERR_t TraceSignaller::ReadData(uint32_t* data){
     //DWORD dwRead, dwWritten;
 
     DWORD* dwRead = new DWORD;
-
-    #if defined ( EUD_WIN_ENV )
     uint32_t buffer[TRC_SIGNAL_BUFFER_SIZE];
-    
+    //bool bSuccess = ReadFile(*this->ReadHandle, buffer, TRC_SIGNAL_BUFFER_SIZE, dwRead, NULL);
+    #if defined ( EUD_WIN_ENV )
     ReadFile(*this->read_handle_, buffer, TRC_SIGNAL_BUFFER_SIZE, dwRead, NULL);
     #endif
     //TODO - handle exceptions
@@ -212,15 +206,15 @@ EUD_ERR_t TraceStopSignal::CheckSignal(uint32_t* signalset_p){
 }
 
 
-USB_ERR_t TraceEudDevice::TraceUsbRead(uint32_t expected_size, uint8_t *data, DWORD *errcode){
+USB_ERR_t TraceEudDevice::UsbRead(uint32_t expected_size, uint8_t *data, DWORD *errcode){
 
+    EUD_ERR_t err;
     //uint32_t device = 0;
 
     //TODO wko : retries needed?
     //device = devicetype;
     //if (err = usb_device_handle->ReadFromDevice((PVOID)Trace_Buffer_IN, expected_size, errcode)) return err;
     #if defined ( EUD_WIN_ENV )
-    EUD_ERR_t err;
     if ((err = usb_device_handle_->ReadFromDevice((PVOID)data, expected_size, errcode))!=0) return err;
     #endif
     //std::copy(Trace_Buffer_IN, Trace_Buffer_IN + usb_device_handle->bytesRead, data);

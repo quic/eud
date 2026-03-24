@@ -35,7 +35,6 @@ using namespace std;
 
 extern std::string uint32_to_ascii (uint32_t number);
 extern uint32_t ascii_to_int (std::string asciinum);
-trace_config_data* trace_cfg = new trace_config_data;
 TraceEudDevice* trc_device = 0x0;
 
 /**
@@ -43,8 +42,10 @@ TraceEudDevice* trc_device = 0x0;
 *   @param: device_id, trns_len, trns_tmout, on_time
 *   @return: Error status
 */
-EXPORT EUD_ERR_t eud_trace_device_init(uint32_t device_id, uint32_t trns_len, uint32_t trns_tmout, uint32_t on_time)
+EXPORT EUD_ERR_t eud_trace_device_init(uint32_t device_id, uint32_t trns_len, uint32_t trns_tmout)
 {
+    uint32_t arr[100] = {0};
+    uint32_t len = 0U; 
     EUD_ERR_t err = EUD_SUCCESS;
 
     //Initialising Trace Device. 
@@ -52,17 +53,14 @@ EXPORT EUD_ERR_t eud_trace_device_init(uint32_t device_id, uint32_t trns_len, ui
     if (trc_device == NULL)
         QCEUD_Print("trc_device is NULL\n");
 
-    trace_cfg->trace_trns_len = trns_len;
-    trace_cfg->trace_trns_tmout = trns_tmout;
-    trace_cfg->trace_on_time = on_time;
-    trace_cfg->output_file_name = "Trace";
+    trc_device->current_trace_transaction_length_ = trns_len;
+    trc_device->current_trace_timeout_value_ = trns_tmout;
 
-    QCEUD_Print("\nTrace transaction length :%d", trace_cfg->trace_trns_len);
-    QCEUD_Print("\nTrace trans timeout  :%d", trace_cfg->trace_trns_tmout);
-    QCEUD_Print("\nTrace on time :%d", trace_cfg->trace_on_time);
+    QCEUD_Print("\nTrace transaction length :%d", trc_device->current_trace_transaction_length_);
+    QCEUD_Print("\nTrace trans timeout  :%d", trc_device->current_trace_timeout_value_);
 
     //send commands to start trace
-    if((err = eud_trace_config(trc_device, trace_cfg)) != EUD_SUCCESS) {
+    if((err = eud_trace_config(trc_device)) != EUD_SUCCESS) {
         QCEUD_Print("\n EUD Trace config FAILED!! with Err: %08x\n", err);
     }
     else 
@@ -80,9 +78,20 @@ EXPORT EUD_ERR_t eud_trace_device_init(uint32_t device_id, uint32_t trns_len, ui
 *   @breif: Read traces from EUD Trace peripheral
 *   @return: Error status
 */
-EXPORT EUD_ERR_t eud_trace_device_read(void) 
+EXPORT EUD_ERR_t eud_trace_device_ready(void) 
 {
-    return eud_start_tracing(trc_device, trace_cfg);
+    EUD_ERR_t err = EUD_SUCCESS;
+    err = trace_keep(trc_device);
+    if(err != EUD_SUCCESS) {
+        return err;
+    }
+    QCEUD_Print("\nKEEP command sent.");
+    return err;
+}
+
+EXPORT EUD_ERR_t eud_trace_device_read(uint8_t* trace_buffer_out,size_t trace_size_to_read,size_t* trace_size_returned) 
+{
+    return eud_start_tracing(trc_device, trace_buffer_out, trace_size_to_read, trace_size_returned);
 }
 /**********************************************************************
 *   @breif: closes trace peripheral. 
@@ -102,7 +111,7 @@ EXPORT EUD_ERR_t eud_trace_device_close(void)
     return err;
 }
 
-EXPORT EUD_ERR_t eud_trace_config(TraceEudDevice* trace_handle_p, trace_config_data* trace_cfg ) {
+EXPORT EUD_ERR_t eud_trace_config(TraceEudDevice* trace_handle_p) {
 
     EUD_ERR_t err = EUD_SUCCESS;
     DWORD * errcode = new DWORD;
@@ -111,22 +120,21 @@ EXPORT EUD_ERR_t eud_trace_config(TraceEudDevice* trace_handle_p, trace_config_d
         return eud_set_last_error(EUD_ERR_BAD_HANDLE_PARAMETER);
     }
 
-    if ((err = eud_trace_set_timeout_ms(trace_handle_p, trace_cfg->trace_trns_tmout)) != EUD_SUCCESS) { 
+    if ((err = eud_trace_set_timeout_ms(trace_handle_p, trace_handle_p->current_trace_timeout_value_)) != EUD_SUCCESS) { 
         QCEUD_Print ("\n TraceSetTimeout Error");
         return err;
     }
     else 
-        QCEUD_Print ("\nTrace transfer time out sent as 0x%x", trace_cfg->trace_trns_tmout);
+        QCEUD_Print ("\nTrace transfer time out sent as 0x%x", trace_handle_p->current_trace_timeout_value_);
 
     //read existing buffer 
     QCEUD_Print ("\nReading existing buffer..");
-    trace_handle_p->current_trace_transaction_length_ = trace_cfg->trace_trns_len;
     uint8_t* tracedata = new uint8_t[trace_handle_p->current_trace_transaction_length_ * 2];
 
     // Flush the ATB buffer
     for (int i = 0; i < 2; i++) {
         QCEUD_Print ("Initial buffer read\n");
-        err = trace_handle_p->TraceUsbRead (trace_handle_p->current_trace_transaction_length_ * 2, (tracedata), errcode);
+        err = trace_handle_p->UsbRead (trace_handle_p->current_trace_transaction_length_ * 2, (tracedata), errcode);
 
         if(err != EUD_SUCCESS)
         {
@@ -136,12 +144,12 @@ EXPORT EUD_ERR_t eud_trace_config(TraceEudDevice* trace_handle_p, trace_config_d
     }
 
     //Send Byte transfer length. 
-    if ((err = eud_trace_set_transfer_length (trace_handle_p, trace_cfg->trace_trns_len)) != EUD_SUCCESS) {
+    if ((err = eud_trace_set_transfer_length (trace_handle_p, trace_handle_p->current_trace_transaction_length_)) != EUD_SUCCESS) {
         QCEUD_Print ("\nError in Sending Transferlength.");
         return err;
     }
     else {
-        QCEUD_Print ("\nSetting Trace Transfer Length to %d bytes", trace_cfg->trace_trns_len );
+        QCEUD_Print ("\nSetting Trace Transfer Length to %d bytes", trace_handle_p->current_trace_transaction_length_ );
     }
     delete errcode;
     return EUD_SUCCESS;
@@ -264,97 +272,70 @@ BOOL CtrlHandler(DWORD fdwCtrlType)
     default:
         return FALSE;
     }
-#else 
-    return FALSE;
-#endif
+#endif    
 }
 
 
 
-EXPORT EUD_ERR_t eud_start_tracing (TraceEudDevice* trace_handle_p, trace_config_data* trace_cfg) {
+EXPORT EUD_ERR_t eud_start_tracing(TraceEudDevice* trace_handle_p, uint8_t* trace_buffer_out, size_t trace_size_to_read,size_t* trace_size_returned) {
 
     EUD_ERR_t err = EUD_SUCCESS;
     DWORD *errcode = new DWORD;
+    *errcode = 0; 
     
-    if (trace_handle_p == NULL) {
+    if (trace_handle_p == NULL || trace_buffer_out == NULL || trace_size_returned == NULL) {
         return eud_set_last_error (EUD_ERR_BAD_HANDLE_PARAMETER);
     }
 
-    err = trace_keep(trace_handle_p);
-    if(err != EUD_SUCCESS) {
-        return err;
-    }
-
-    QCEUD_Print("\nKEEP command sent.");
-
-    //Sleep for 5 seconds so that traces can be triggered with trace generation/triggerring tool 
-    Sleep(5000);
-
-    uint32_t chunk_idx = 1;
-    uint32_t data_captured;
-    uint8_t* tracedata = new uint8_t[trace_handle_p->current_trace_transaction_length_ * 2];
     
     #if defined ( EUD_WIN_ENV )
     if (!SetConsoleCtrlHandler ((PHANDLER_ROUTINE)CtrlHandler, TRUE)) {
         return eud_set_last_error (EUD_TRACE_CTRL_HANDLER_REGISTRATION_ERR);
     }
     #endif    
+    size_t transaction_len = trace_handle_p->current_trace_transaction_length_;
+    uint8_t* tracedata = new uint8_t[transaction_len];
+    size_t buffer_offset = 0;
 
-    ofstream file;
-    std::string bin_file = trace_cfg->output_file_name;
-    bin_file = bin_file + ".bin";
+    memset(tracedata, 0, transaction_len);
+    memset(trace_buffer_out, 0, trace_size_to_read);
     
-    file.open(bin_file,  std::ios::binary);
-    if (!file.is_open()) {
-        QCEUD_Print("Could not open file to store the binary data.");
-        return EUD_GENERIC_FAILURE;
-    }
 
     //Main trace collection loop
-    QCEUD_Print("\nTrace collection loop started.");
+    QCEUD_Print("\nStarting trace read for %zu bytes.", trace_size_to_read);
 
-    time_t start_time = time (NULL), curr_time = time (NULL); 
 
-    struct tm* ptr;
-    ptr = gmtime (&start_time);
-    QCEUD_Print("\n%s", asctime(ptr));
 
-    memset (tracedata, 0, (trace_handle_p->current_trace_transaction_length_) * 2);
     
-    while((difftime(curr_time, start_time)) < trace_cfg->trace_on_time) {
+    while (buffer_offset < trace_size_to_read) {
         //Start new trace file.
-        data_captured = 0;
-        err = trace_handle_p->TraceUsbRead(trace_handle_p->current_trace_transaction_length_, (tracedata), errcode);     
-        if(*errcode != LIBUSB_SUCCESS)
-        {
+        err = trace_handle_p->UsbRead(transaction_len, tracedata, errcode);
+        if (*errcode != LIBUSB_SUCCESS) {
             QCEUD_Print("Read Error: %s \n", (PCHAR)libusb_error_name(*errcode));
+            err = *errcode;
+            break;
         }
         if (err != EUD_SUCCESS) {
             QCEUD_Print("\n USB read error 0x%x ", err);
+            err = *errcode;
             break;
         }
         
         if(tracedata[0] == 0xFF) {
             //Data ATID is 0xFF, Discarding
-            memset (tracedata, 0, trace_handle_p->current_trace_transaction_length_);
+            memset(tracedata, 0, transaction_len);
+            continue;
         }
-        else  {
-            for (uint8_t i = 2; i < trace_handle_p->current_trace_transaction_length_; i++) {
-                file<<((uint8_t*)tracedata)[i];
-            }
 
-            data_captured += trace_handle_p->current_trace_transaction_length_;
-        }
-        chunk_idx++;
-        curr_time = time (NULL);
+        size_t copy_len = std::min(transaction_len - 2, trace_size_to_read - buffer_offset);
+        memcpy(trace_buffer_out  + buffer_offset, tracedata + 2, copy_len);
+        buffer_offset += copy_len;
     }
+    *trace_size_returned = buffer_offset;
 
-    ptr = gmtime(&curr_time);
-    QCEUD_Print("\n%s", asctime(ptr));
-    file.close();
-    QCEUD_Print("\nTrace collection finished and trace logs are saved.");
-    delete [] tracedata;
+    delete[] tracedata;
     delete errcode;
+    QCEUD_Print("\nTrace read complete. Bytes captured: %zu", buffer_offset);
     return err;
 }
 
@@ -393,6 +374,7 @@ EXPORT EUD_ERR_t eud_stop_trace (TraceEudDevice* trace_handle_p) {
 
 EXPORT EUD_ERR_t eud_close_trace (TraceEudDevice* trace_handle_p)
 {
+    EUD_ERR_t err = EUD_SUCCESS;
 
     //ctl->close trace
     if (trace_handle_p == NULL) {
@@ -401,7 +383,6 @@ EXPORT EUD_ERR_t eud_close_trace (TraceEudDevice* trace_handle_p)
     
     //myhandle->TraceSignal->writedata(TRC_MESSAGE_CLOSE_TRACE);
     #if defined ( EUD_WIN_ENV )
-    EUD_ERR_t err = EUD_SUCCESS;
     err = trace_handle_p->trace_stop_signal_->SetSignal();
     if (err != EUD_SUCCESS) {
         return err;

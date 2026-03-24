@@ -58,16 +58,6 @@
 
 #include "trc_eud.h"
 
-typedef struct {
-    uint32_t eud_dev_id;
-    uint32_t trace_trns_len;
-    uint32_t trace_trns_tmout;
-    uint32_t trace_on_time;
-    #ifdef __cplusplus
-        std::string output_file_name;
-    #endif //__cplusplus
-    uint32_t wait;
-} trace_config_data;
 
 
 /**
@@ -75,7 +65,7 @@ typedef struct {
 *   @param: NULL
 *   @return: Error status
 */
-EXPORT EUD_ERR_t eud_trace_device_init(uint32_t device_id, uint32_t trns_len, uint32_t trns_tmout, uint32_t on_time);
+EXPORT EUD_ERR_t eud_trace_device_init(uint32_t device_id, uint32_t trns_len, uint32_t trns_tmout);
 
 /**
 *  EUD_OpenTrace(TraceEudDevice* trace_handle_p,trace_config_data* json_trace_data);
@@ -91,8 +81,7 @@ EXPORT EUD_ERR_t eud_trace_device_init(uint32_t device_id, uint32_t trns_len, ui
 *
 */
 EXPORT EUD_ERR_t eud_trace_config(
-    TraceEudDevice* trace_handle_p,  
-    trace_config_data* json_trace_data
+    TraceEudDevice* trace_handle_p
 );
 
 /**
@@ -103,7 +92,9 @@ EXPORT EUD_ERR_t eud_trace_config(
 */
 EXPORT EUD_ERR_t eud_start_tracing(
     TraceEudDevice* trace_handle_p,  
-    trace_config_data* json_trace_data
+    uint8_t* trace_buffer_out, 
+    size_t trace_size_to_read,
+    size_t* trace_size_returned
 );
 
 /**
@@ -294,13 +285,24 @@ EXPORT EUD_ERR_t trace_trns_len(
 );
 
 /**
+*   @brief:  sends Keep comamnd, after this command is ready to receive the traces. 
+*   @return: EUD_ERR_t -  Error status
+*/
+EXPORT EUD_ERR_t eud_trace_device_ready(
+); 
+
+/** 
 *   @breif: Recieves trace configuration data from OPenOCD and sets the paramters and starts reading trace
 *   @param: uint32_t trns_len - transaction length for trace 
 *   @param: uint32_t trns_tmout - time out for trace 
 *   @param: uint32_t on_time - time for which trace needs to be collected. 
 *   @return: Error status
 */
-EXPORT EUD_ERR_t eud_trace_device_read(void);
+EXPORT EUD_ERR_t eud_trace_device_read(
+    uint8_t* trace_buffer_out,
+    size_t trace_size_to_read,
+    size_t* trace_size_returned
+);
 
 /**
 *   @breif: closes trace peripheral. 
