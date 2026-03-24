@@ -327,8 +327,8 @@ EXPORT EUD_ERR_t eud_start_tracing(TraceEudDevice* trace_handle_p, uint8_t* trac
             continue;
         }
 
-        size_t copy_len = std::min(transaction_len - 2, trace_size_to_read - buffer_offset);
-        memcpy(trace_buffer_out  + buffer_offset, tracedata + 2, copy_len);
+        size_t copy_len = std::min(transaction_len, trace_size_to_read - buffer_offset);
+        memcpy(trace_buffer_out  + buffer_offset, tracedata, copy_len);
         buffer_offset += copy_len;
     }
     *trace_size_returned = buffer_offset;
