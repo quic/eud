@@ -44,20 +44,18 @@ TraceEudDevice* trc_device = 0x0;
 */
 EXPORT EUD_ERR_t eud_trace_device_init(uint32_t device_id, uint32_t trns_len, uint32_t trns_tmout)
 {
-    uint32_t arr[100] = {0};
-    uint32_t len = 0U; 
     EUD_ERR_t err = EUD_SUCCESS;
 
-    //Initialising Trace Device. 
+    //Initialising Trace Device. s
     trc_device = eud_initialize_device_trace(device_id, 1, &err);
     if (trc_device == NULL)
         QCEUD_Print("trc_device is NULL\n");
 
-    trc_device->current_trace_transaction_length_ = trns_len;
-    trc_device->current_trace_timeout_value_ = trns_tmout;
+    trc_device->trns_len_ = trns_len;
+    trc_device->timeout_ = trns_tmout;
 
-    QCEUD_Print("\nTrace transaction length :%d", trc_device->current_trace_transaction_length_);
-    QCEUD_Print("\nTrace trans timeout  :%d", trc_device->current_trace_timeout_value_);
+    QCEUD_Print("\nTrace transaction length :%d", trc_device->trns_len_);
+    QCEUD_Print("\nTrace trans timeout  :%d", trc_device->timeout_);
 
     //send commands to start trace
     if((err = eud_trace_config(trc_device)) != EUD_SUCCESS) {
@@ -114,44 +112,44 @@ EXPORT EUD_ERR_t eud_trace_device_close(void)
 EXPORT EUD_ERR_t eud_trace_config(TraceEudDevice* trace_handle_p) {
 
     EUD_ERR_t err = EUD_SUCCESS;
-    DWORD * errcode = new DWORD;
+    usb_read_result read_result = {};
 
     if (trace_handle_p == NULL) {
         return eud_set_last_error(EUD_ERR_BAD_HANDLE_PARAMETER);
     }
 
-    if ((err = eud_trace_set_timeout_ms(trace_handle_p, trace_handle_p->current_trace_timeout_value_)) != EUD_SUCCESS) { 
+    if ((err = eud_trace_set_timeout_ms(trace_handle_p, trace_handle_p->timeout_)) != EUD_SUCCESS) { 
         QCEUD_Print ("\n TraceSetTimeout Error");
         return err;
     }
     else 
-        QCEUD_Print ("\nTrace transfer time out sent as 0x%x", trace_handle_p->current_trace_timeout_value_);
+        QCEUD_Print ("\nTrace transfer time out sent as 0x%x", trace_handle_p->timeout_);
 
     //read existing buffer 
     QCEUD_Print ("\nReading existing buffer..");
-    uint8_t* tracedata = new uint8_t[trace_handle_p->current_trace_transaction_length_ * 2];
 
+    uint8_t* tracedata = new uint8_t[trace_handle_p->trns_len_];
     // Flush the ATB buffer
     for (int i = 0; i < 2; i++) {
         QCEUD_Print ("Initial buffer read\n");
-        err = trace_handle_p->UsbRead (trace_handle_p->current_trace_transaction_length_ * 2, (tracedata), errcode);
-
+        
+        err = trace_handle_p->UsbRead(trace_handle_p->trns_len_, tracedata, read_result);
         if(err != EUD_SUCCESS)
         {
             QCEUD_Print ("Could not read anything from buffer..");
             QCEUD_Print ("Err: %08x\n", err);
         }
     }
+    delete[] tracedata;
 
     //Send Byte transfer length. 
-    if ((err = eud_trace_set_transfer_length (trace_handle_p, trace_handle_p->current_trace_transaction_length_)) != EUD_SUCCESS) {
+    if ((err = eud_trace_set_transfer_length (trace_handle_p, trace_handle_p->trns_len_)) != EUD_SUCCESS) {
         QCEUD_Print ("\nError in Sending Transferlength.");
-        return err;
+        return err; 
     }
     else {
-        QCEUD_Print ("\nSetting Trace Transfer Length to %d bytes", trace_handle_p->current_trace_transaction_length_ );
+        QCEUD_Print ("\nSetting Trace Transfer Length to %d bytes", trace_handle_p->trns_len_ );
     }
-    delete errcode;
     return EUD_SUCCESS;
 }
 /*
@@ -277,64 +275,65 @@ BOOL CtrlHandler(DWORD fdwCtrlType)
 
 
 
-EXPORT EUD_ERR_t eud_start_tracing(TraceEudDevice* trace_handle_p, uint8_t* trace_buffer_out, size_t trace_size_to_read,size_t* trace_size_returned) {
-
+EXPORT EUD_ERR_t eud_start_tracing(TraceEudDevice* trace_handle_p, uint8_t* buffer, size_t buff_size, size_t* data_read){
+    
     EUD_ERR_t err = EUD_SUCCESS;
-    DWORD *errcode = new DWORD;
-    *errcode = 0; 
-    
-    if (trace_handle_p == NULL || trace_buffer_out == NULL || trace_size_returned == NULL) {
-        return eud_set_last_error (EUD_ERR_BAD_HANDLE_PARAMETER);
+    size_t buffer_offset = 0U;
+    size_t bytes_remaining;
+    size_t bytes_to_request;
+    usb_read_result read_result;
+
+    if (data_read != nullptr)
+    {
+        *data_read = 0U;
     }
 
-    
-    #if defined ( EUD_WIN_ENV )
-    if (!SetConsoleCtrlHandler ((PHANDLER_ROUTINE)CtrlHandler, TRUE)) {
-        return eud_set_last_error (EUD_TRACE_CTRL_HANDLER_REGISTRATION_ERR);
+    if ((trace_handle_p == nullptr) || (buff_size < 1) || (data_read == nullptr) ||  (buffer == nullptr))
+    {
+        return eud_set_last_error(EUD_ERR_BAD_HANDLE_PARAMETER);
     }
-    #endif    
-    size_t transaction_len = trace_handle_p->current_trace_transaction_length_;
-    uint8_t* tracedata = new uint8_t[transaction_len];
-    size_t buffer_offset = 0;
 
-    memset(tracedata, 0, transaction_len);
-    memset(trace_buffer_out, 0, trace_size_to_read);
-    
+    QCEUD_Print("\nStarting trace read for %zu bytes.", buff_size);
 
-    //Main trace collection loop
-    QCEUD_Print("\nStarting trace read for %zu bytes.", trace_size_to_read);
+    while (buffer_offset < buff_size)
+    {   
+        read_result = {}; 
+        bytes_remaining = buff_size - buffer_offset;
+        if(trace_handle_p->trns_len_ < bytes_remaining){
+            bytes_to_request = trace_handle_p->trns_len_;
+        }
+        else {
+            bytes_to_request = bytes_remaining;
+        }  
 
+        err = trace_handle_p->UsbRead(bytes_to_request, buffer + buffer_offset, read_result);
+        QCEUD_Print("\n[USBREAD] requested=%zu usb_status=%d bytes_read=%zu",bytes_to_request,read_result.usb_status,read_result.bytes_read);
 
-
-    
-    while (buffer_offset < trace_size_to_read) {
-        //Start new trace file.
-        err = trace_handle_p->UsbRead(transaction_len, tracedata, errcode);
-        if (*errcode != LIBUSB_SUCCESS) {
-            QCEUD_Print("Read Error: %s \n", (PCHAR)libusb_error_name(*errcode));
-            err = *errcode;
+        if (read_result.usb_status == LIBUSB_ERROR_TIMEOUT) //keeping timeout as special error case 
+        {
+            err = read_result.usb_status;
             break;
         }
-        if (err != EUD_SUCCESS) {
-            QCEUD_Print("\n USB read error 0x%x ", err);
-            err = *errcode;
+
+        if (err != EUD_USB_SUCCESS)
+        {
+            *data_read = buffer_offset;
+            QCEUD_Print("\nUSB read failed. err=0x%x", err);
+            err = read_result.usb_status;
             break;
         }
-        
-        if(tracedata[0] == 0xFF) {
-            //Data ATID is 0xFF, Discarding
-            memset(tracedata, 0, transaction_len);
+
+        if (read_result.bytes_read > 0U)
+        {
+            print_buffer_hex(buffer + buffer_offset, read_result.bytes_read);
+            buffer_offset += read_result.bytes_read;
             continue;
         }
-
-        size_t copy_len = std::min(transaction_len, trace_size_to_read - buffer_offset);
-        memcpy(trace_buffer_out  + buffer_offset, tracedata, copy_len);
-        buffer_offset += copy_len;
+        // Zero-length packet with success:
+        // valid per trace peripheral behavior, so continue reading.
     }
-    *trace_size_returned = buffer_offset;
 
-    delete[] tracedata;
-    delete errcode;
+    *data_read = buffer_offset;
     QCEUD_Print("\nTrace read complete. Bytes captured: %zu", buffer_offset);
     return err;
 }
@@ -392,6 +391,30 @@ EXPORT EUD_ERR_t eud_close_trace (TraceEudDevice* trace_handle_p)
     return eud_close_peripheral((PVOID*)trace_handle_p);
 }
 
+EXPORT EUD_ERR_t print_buffer_hex(const uint8_t* data, size_t length)
+{
+    EUD_ERR_t err = EUD_SUCCESS;
+    if ((data == NULL) || (length == 0U))
+    {
+        QCEUD_Print("\n[DATA] <empty>");
+        return EUD_GENERIC_FAILURE;
+    }
+
+    QCEUD_Print("\n[DATA] length=%zu", length);
+
+    for (size_t i = 0U; i < length; ++i)
+    {
+        if ((i % 16U) == 0U)
+        {
+            QCEUD_Print("\n%04zu : ", i);
+        }
+
+        QCEUD_Print("%02X ", data[i]);
+    }
+
+    QCEUD_Print("\n");
+    return err;
+}
 
 EXPORT EUD_ERR_t eud_reinit_trace(TraceEudDevice* trace_handle_p) {
 
@@ -424,7 +447,7 @@ EXPORT EUD_ERR_t eud_trace_set_chunk_sizes(TraceEudDevice* trace_handle_p, uint3
         return eud_set_last_error(EUD_ERR_BAD_PARAMETER);
     }
 
-    if (chunksize < trace_handle_p->current_trace_transaction_length_) {
+    if (chunksize < trace_handle_p->trns_len_) {
         return eud_set_last_error(EUD_ERR_TRACE_CHUNKSIZE_LESS_THAN_TRANSLEN);
     }
     trace_handle_p->chunk_size_ = chunksize;
@@ -519,7 +542,7 @@ EXPORT EUD_ERR_t eud_trace_set_timeout_ms (TraceEudDevice* trace_handle_p, uint3
     if ((err = trace_trns_tmout (trace_handle_p, MS_Timeout_Val))!=EUD_SUCCESS) {
         return err;
     }
-    trace_handle_p->current_trace_timeout_value_ = MS_Timeout_Val;
+    trace_handle_p->timeout_ = MS_Timeout_Val;
 
     return EUD_SUCCESS;
 }
@@ -548,7 +571,7 @@ EXPORT EUD_ERR_t eud_trace_set_transfer_length (TraceEudDevice* trace_handle_p, 
     if((err = trace_trns_len (trace_handle_p, TransactionLength))!=EUD_SUCCESS) {
         return err;
     }
-    trace_handle_p->current_trace_transaction_length_ = TransactionLength;
+    trace_handle_p->trns_len_ = TransactionLength;
 
     return EUD_SUCCESS;
 }
@@ -567,8 +590,8 @@ EXPORT EUD_ERR_t eud_trace_reset(TraceEudDevice* trace_handle_p) {
     //wait for flush response or timeout
     trace_handle_p->WriteCommand(TRC_CMD_PERIPH_RST);
     
-    if ((err = trace_handle_p->WriteCommand(TRC_CMD_TRNS_LEN, trace_handle_p->current_trace_transaction_length_))!=0) return err;
-    if ((err = trace_handle_p->WriteCommand(TRC_CMD_TRNS_TMOUT, trace_handle_p->current_trace_timeout_value_))!=0) return err;
+    if ((err = trace_handle_p->WriteCommand(TRC_CMD_TRNS_LEN, trace_handle_p->trns_len_))!=0) return err;
+    if ((err = trace_handle_p->WriteCommand(TRC_CMD_TRNS_TMOUT, trace_handle_p->timeout_))!=0) return err;
     
     return EUD_SUCCESS;
 }

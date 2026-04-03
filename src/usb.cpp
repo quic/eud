@@ -755,6 +755,48 @@ USB_ERR_t UsbDevice::ReadFromDevice(PVOID Buffer, DWORD ReadSize, DWORD *errcode
    return err;
 }
 
+USB_ERR_t UsbDevice::ReadFromDeviceTrc(uint8_t* buffer, size_t request_size, usb_read_result& result) 
+{
+    result.usb_status = LIBUSB_SUCCESS;
+    result.bytes_read = 0U;
+
+    int libusb_ret = LIBUSB_SUCCESS;
+
+    if (dev_handle_ == nullptr)
+    {
+        if (UsbOpen(&libusb_ret, dev_) != EUD_SUCCESS)
+        {
+            result.usb_status = libusb_ret;
+            return EUD_USB_ERR_HANDLE_UNITIALIZED;
+        }
+    }
+
+    int bytes_read_int = 0;
+
+    libusb_ret = libusb_bulk_transfer(dev_handle_, EUD_READ_ENDPOINT, buffer, static_cast<int>(request_size), &bytes_read_int, 100);
+
+    result.usb_status = libusb_ret;
+    result.bytes_read = bytes_read_int;
+
+    // Following are considered Valid cases:
+    // - full packet
+    // - partial packet
+    // - zero-length packet
+    // - timeout with zero or partial data
+	if ((libusb_ret == LIBUSB_SUCCESS) || (libusb_ret == LIBUSB_ERROR_TIMEOUT))
+	{
+		if (libusb_ret == LIBUSB_SUCCESS && result.bytes_read > 0) {
+			QCEUD_Print("Read successful: %zu bytes\n", result.bytes_read);
+		}
+		return EUD_USB_SUCCESS;
+	}
+
+    QCEUD_Print("Read Error: %s\n", libusb_error_name(libusb_ret));
+    UsbClose();
+    return EUD_USB_ERROR_READ_FAILED_GENERIC;
+}
+
+
 /*
 API to retrieve a list of EUD devices attached to the host
 Return Value: A vector of eud_devices matching valid EUD devices

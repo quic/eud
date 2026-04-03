@@ -31,8 +31,8 @@ TraceEudDevice::TraceEudDevice(){
     device_id_ = 0;
     DvcMgr_DeviceName = EUD_TRC_DEVMGR_NAME;
 
-    current_trace_timeout_value_ = TRACE_DEFAULT_TRNS_TMOUT;
-    current_trace_transaction_length_ = TRACE_DEFAULT_TRANSACTION_LENGTH;
+    timeout_ = TRACE_DEFAULT_TRNS_TMOUT;
+    trns_len_ = TRACE_DEFAULT_TRANSACTION_LENGTH;
 
     
     //Create timestamped directory
@@ -206,19 +206,16 @@ EUD_ERR_t TraceStopSignal::CheckSignal(uint32_t* signalset_p){
 }
 
 
-USB_ERR_t TraceEudDevice::UsbRead(uint32_t expected_size, uint8_t *data, DWORD *errcode){
 
-    EUD_ERR_t err;
-    //uint32_t device = 0;
+USB_ERR_t TraceEudDevice::UsbRead(size_t expected_size, uint8_t* data, usb_read_result& result) 
+{
+    result.usb_status = LIBUSB_SUCCESS;
+    result.bytes_read = 0U;
 
-    //TODO wko : retries needed?
-    //device = devicetype;
-    //if (err = usb_device_handle->ReadFromDevice((PVOID)Trace_Buffer_IN, expected_size, errcode)) return err;
-    #if defined ( EUD_WIN_ENV )
-    if ((err = usb_device_handle_->ReadFromDevice((PVOID)data, expected_size, errcode))!=0) return err;
-    #endif
-    //std::copy(Trace_Buffer_IN, Trace_Buffer_IN + usb_device_handle->bytesRead, data);
+    if (usb_device_handle_ == nullptr)
+    {
+        return EUD_USB_ERR_HANDLE_UNITIALIZED;
+    }
 
-    return EUD_USB_SUCCESS;
-
+    return usb_device_handle_->ReadFromDeviceTrc(data, expected_size, result);
 }

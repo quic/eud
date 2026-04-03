@@ -152,24 +152,24 @@ public:
     #endif
     ///Trace peripheral version of usb_read. Passes in the larger Trace_Buffer_IN
     ///instead of usb_buffer_in_ in order to handle larger data sizes.
-    virtual USB_ERR_t UsbRead( uint32_t expected_size, ///<Number of bytes to be read
-                                uint8_t *data,           ///<Data buffer to populate
-                                DWORD *errcode 
-                            );
-
+    using EudDevice::UsbRead;
+    virtual USB_ERR_t UsbRead(  size_t expected_size, ///<Number of bytes to be read
+                                uint8_t* data,       ///<Data buffer to populate
+                                usb_read_result& result
+                            ); 
     ///Shadow copy of Trace timeout value in EUD hardware. 
     ///Each time a transfer is completed, the transfer timer is re - started.
     ///If the transfer does not complete before the time expires, the Trace Peripheral 
     ///terminates the transfer by sending either a zero or partial length packet and 
     ///resetting the transfer packet counter and the transfer timer.
-    uint32_t current_trace_timeout_value_;
+    uint32_t timeout_;
 
     ///Shadow copy of Trace Transfer Length in EUD hardware.
     ///Transaction Length indicates the number of bytes in a USB transfer from Trace
     ///peripheral to host. Note that Transaction_Length cannot be a multiple of 128,
     ///nor can it be equal to an integer number of packets plus on, nor an integer number
     ///of packets plus two.
-    uint32_t current_trace_transaction_length_;
+    uint32_t trns_len_;
 
     ///Trace buffer. Basically a larger version of usb_buffer_in_ found in EudDevice class.
     ///Needed for larger trace transfers.

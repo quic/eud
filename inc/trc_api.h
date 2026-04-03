@@ -91,10 +91,10 @@ EXPORT EUD_ERR_t eud_trace_config(
 *   @return: EUD_ERR_t - Error status
 */
 EXPORT EUD_ERR_t eud_start_tracing(
-    TraceEudDevice* trace_handle_p,  
-    uint8_t* trace_buffer_out, 
-    size_t trace_size_to_read,
-    size_t* trace_size_returned
+    TraceEudDevice* trace_handle_p, 
+    uint8_t* buffer, 
+    size_t buff_size, 
+    size_t* data_read
 );
 
 /**
@@ -189,6 +189,11 @@ EXPORT EUD_ERR_t eud_trace_set_transfer_length(
 */
 EXPORT EUD_ERR_t eud_close_trace(
     TraceEudDevice* trace_handle_p ///<PVOID*  trc_handle_p - pointer to EUD Handle instance. Call eud_initialize_device_trace to get EUD Handle Instance.
+);
+
+EXPORT EUD_ERR_t print_buffer_hex(
+    const uint8_t* data, 
+    size_t length
 );
 
 /////////////////////////////////////////////////////////////////////////////////

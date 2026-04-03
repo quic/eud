@@ -117,6 +117,14 @@ typedef struct eud_device_info{
 } eud_device_info;
 #endif
 
+#ifdef __cplusplus 
+typedef struct usb_read_result
+{
+    int usb_status;              // LIBUSB_SUCCESS or negative libusb error
+    std::size_t bytes_read;      // actual bytes returned by libusb
+} usb_read_result;
+#endif
+
 //===---------------------------------------------------------------------===//
 //
 //                      Function Definitions
@@ -228,6 +236,11 @@ public:
                             /// Note that this is different from the EUD error
                             /// code that would be returned as USB_ERR_t.
         );
+    USB_ERR_t ReadFromDeviceTrc(
+        uint8_t* buffer, 
+        size_t request_size, 
+        usb_read_result& result
+    ); 
 
     /////////////////////Member variables/////////////////////////
 #if defined ( EUD_WIN_ENV )    
