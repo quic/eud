@@ -7,10 +7,7 @@
 #include "trc_api.h"
 #include "device_manager.h"
 
-static void write_trace(const char *file_name,
-                        const uint8_t *trace_buff,
-                        size_t bytes_read,
-                        size_t bytes_requested)
+static void write_trace(const char *file_name, const uint8_t *trace_buff, size_t bytes_read, size_t bytes_requested)
 {
     FILE *fp = fopen(file_name, "wb");
     if (!fp) {
@@ -97,11 +94,9 @@ int main(int argc, char *argv[])
     err = eud_trace_device_read(trace_buff, bytes_to_read, &bytes_read);
     if (err == EUD_SUCCESS) {
         write_trace(file_name, trace_buff, bytes_read, bytes_to_read);
-    } else if (err == LIBUSB_ERROR_TIMEOUT && trace_buff != NULL && bytes_read > 0) {
-        printf("Trace API Timeout: Requested %zu bytes, received only %zu\n",
-               bytes_to_read, bytes_read);
-        write_trace(file_name, trace_buff, bytes_read, bytes_to_read);
-    } else {
+        printf("Trace API Status: %d. Requested %zu bytes, received %zu\n", err, bytes_to_read, bytes_read);
+    } 
+    else {
         printf("Trace API Error: %d.\n", err);
     }
 

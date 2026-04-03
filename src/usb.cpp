@@ -755,10 +755,11 @@ USB_ERR_t UsbDevice::ReadFromDevice(PVOID Buffer, DWORD ReadSize, DWORD *errcode
    return err;
 }
 
-USB_ERR_t UsbDevice::ReadFromDeviceTrc(uint8_t* buffer, size_t request_size, usb_read_result& result) 
+USB_ERR_t UsbDevice::ReadFromDeviceTrc(uint8_t* buffer, size_t request_size, size_t configured_size, usb_read_result& result) 
 {
     result.usb_status = LIBUSB_SUCCESS;
     result.bytes_read = 0U;
+	int bytes_read_int = 0;
 
     int libusb_ret = LIBUSB_SUCCESS;
 
@@ -771,29 +772,51 @@ USB_ERR_t UsbDevice::ReadFromDeviceTrc(uint8_t* buffer, size_t request_size, usb
         }
     }
 
-    int bytes_read_int = 0;
-
-    libusb_ret = libusb_bulk_transfer(dev_handle_, EUD_READ_ENDPOINT, buffer, static_cast<int>(request_size), &bytes_read_int, 100);
-
-    result.usb_status = libusb_ret;
-    result.bytes_read = bytes_read_int;
-
-    // Following are considered Valid cases:
-    // - full packet
-    // - partial packet
-    // - zero-length packet
-    // - timeout with zero or partial data
-	if ((libusb_ret == LIBUSB_SUCCESS) || (libusb_ret == LIBUSB_ERROR_TIMEOUT))
-	{
-		if (libusb_ret == LIBUSB_SUCCESS && result.bytes_read > 0) {
-			QCEUD_Print("Read successful: %zu bytes\n", result.bytes_read);
+	// Defensive read: ensure request size >= 126
+	if (request_size < configured_size) {
+		// allocate temporary buffer
+		uint8_t* guard_buf = static_cast<uint8_t*>(malloc(configured_size));
+		if (!guard_buf) {
+			QCEUD_Print("Memory allocation failed for guard_buf\n");
+			return EUD_USB_ERROR_READ_FAILED_GENERIC;
 		}
+
+		// perform bulk transfer with safe size
+		libusb_ret = libusb_bulk_transfer(dev_handle_, EUD_READ_ENDPOINT, guard_buf, configured_size, &bytes_read_int, 100);
+
+		// copy only requested bytes back to caller buffer
+		if (libusb_ret == LIBUSB_SUCCESS && bytes_read_int > 0) {
+			size_t copy_len;
+			if (request_size < static_cast<size_t>(bytes_read_int)) {
+				copy_len = request_size;
+			} else {
+				copy_len = static_cast<size_t>(bytes_read_int);
+			}
+			memcpy(buffer, guard_buf, copy_len);
+			result.bytes_read = copy_len;
+		} 
+		else {
+			result.bytes_read = 0;
+		}
+		free(guard_buf);
+	}
+	else {
+		libusb_ret = libusb_bulk_transfer(dev_handle_, EUD_READ_ENDPOINT, buffer, static_cast<int>(request_size), &bytes_read_int, 100);
+		result.bytes_read = bytes_read_int;
+	}
+	result.usb_status = libusb_ret;
+	// Following are considered Valid cases:
+	// - full packet
+	// - partial packet
+	// - zero-length packet
+	// - timeout with zero or partial data
+	if (libusb_ret == LIBUSB_SUCCESS)
+	{
 		return EUD_USB_SUCCESS;
 	}
-
-    QCEUD_Print("Read Error: %s\n", libusb_error_name(libusb_ret));
-    UsbClose();
-    return EUD_USB_ERROR_READ_FAILED_GENERIC;
+	QCEUD_Print("Read Error: %s\n", libusb_error_name(libusb_ret));
+	UsbClose();
+	return EUD_USB_ERROR_READ_FAILED_GENERIC;
 }
 
 

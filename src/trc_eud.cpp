@@ -207,7 +207,7 @@ EUD_ERR_t TraceStopSignal::CheckSignal(uint32_t* signalset_p){
 
 
 
-USB_ERR_t TraceEudDevice::UsbRead(size_t expected_size, uint8_t* data, usb_read_result& result) 
+USB_ERR_t TraceEudDevice::UsbRead(size_t expected_size, size_t configured_size, uint8_t* data, usb_read_result& result) 
 {
     result.usb_status = LIBUSB_SUCCESS;
     result.bytes_read = 0U;
@@ -217,5 +217,5 @@ USB_ERR_t TraceEudDevice::UsbRead(size_t expected_size, uint8_t* data, usb_read_
         return EUD_USB_ERR_HANDLE_UNITIALIZED;
     }
 
-    return usb_device_handle_->ReadFromDeviceTrc(data, expected_size, result);
+    return usb_device_handle_->ReadFromDeviceTrc(data, expected_size, configured_size, result);
 }

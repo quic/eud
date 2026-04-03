@@ -154,6 +154,7 @@ public:
     ///instead of usb_buffer_in_ in order to handle larger data sizes.
     using EudDevice::UsbRead;
     virtual USB_ERR_t UsbRead(  size_t expected_size, ///<Number of bytes to be read
+                                size_t configured_size,
                                 uint8_t* data,       ///<Data buffer to populate
                                 usb_read_result& result
                             ); 

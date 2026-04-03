@@ -133,7 +133,7 @@ EXPORT EUD_ERR_t eud_trace_config(TraceEudDevice* trace_handle_p) {
     for (int i = 0; i < 2; i++) {
         QCEUD_Print ("Initial buffer read\n");
         
-        err = trace_handle_p->UsbRead(trace_handle_p->trns_len_, tracedata, read_result);
+        err = trace_handle_p->UsbRead(trace_handle_p->trns_len_, trace_handle_p->trns_len_, tracedata, read_result);
         if(err != EUD_SUCCESS)
         {
             QCEUD_Print ("Could not read anything from buffer..");
@@ -306,12 +306,13 @@ EXPORT EUD_ERR_t eud_start_tracing(TraceEudDevice* trace_handle_p, uint8_t* buff
             bytes_to_request = bytes_remaining;
         }  
 
-        err = trace_handle_p->UsbRead(bytes_to_request, buffer + buffer_offset, read_result);
+        err = trace_handle_p->UsbRead(bytes_to_request, trace_handle_p->trns_len_ ,buffer + buffer_offset, read_result);
         QCEUD_Print("\n[USBREAD] requested=%zu usb_status=%d bytes_read=%zu",bytes_to_request,read_result.usb_status,read_result.bytes_read);
 
-        if (read_result.usb_status == LIBUSB_ERROR_TIMEOUT) //keeping timeout as special error case 
+        if (read_result.usb_status == LIBUSB_ERROR_TIMEOUT && buffer_offset > 0) 
         {
-            err = read_result.usb_status;
+            //since we read some data and post that we got timeout we are returning success with whatever data is read uptill now 
+            err = EUD_SUCCESS;
             break;
         }
 
@@ -334,7 +335,7 @@ EXPORT EUD_ERR_t eud_start_tracing(TraceEudDevice* trace_handle_p, uint8_t* buff
     }
 
     *data_read = buffer_offset;
-    QCEUD_Print("\nTrace read complete. Bytes captured: %zu", buffer_offset);
+    QCEUD_Print("\nTrace read complete. Bytes captured: %zu.\n", buffer_offset);
     return err;
 }
 

@@ -239,6 +239,7 @@ public:
     USB_ERR_t ReadFromDeviceTrc(
         uint8_t* buffer, 
         size_t request_size, 
+        size_t configured_size,
         usb_read_result& result
     ); 
 
