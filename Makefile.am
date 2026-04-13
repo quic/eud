@@ -31,7 +31,8 @@ libeud_la_SOURCES =  			\
 	src/trc_eud.cpp          	\
 	src/trc_api.cpp        		\
 	src/swd_eud.cpp          	\
-	src/swd_api.cpp
+	src/swd_api.cpp				\
+	src/eud_log.cpp
 #	src/jtag_test.cpp		
 
 libeud_la_CPPFLAGS = -Wall -Wno-narrowing -I $(library_includedir)

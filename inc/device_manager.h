@@ -40,7 +40,7 @@
 #define EUD_PERIPH_ENABLE_SLEEP_TIME    300
 #define MAX_DEVICESTRING_SIZE           4096 ///<Max size for string returned by eud_id5.exe
 
-#define MAX_EUD_PERIPH_ENABLE_RETRIES   1
+#define MAX_EUD_PERIPH_ENABLE_RETRIES   3
 
 #define EUD_ID_EXE                      "eud_id5.exe"
 #define PRELOAD_READ_PIPE_VALUE         "EUD USB Header"

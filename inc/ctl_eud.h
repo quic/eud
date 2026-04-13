@@ -246,6 +246,7 @@ const char* const CTL_REG_STRING_ARRAY[] = {
                                     (1<<CTL_DAP_MUX_SEL_SHFT        )
 
 #define CTL_PAYLOAD_TRCON           (1<<CTL_TRACE_PERIPH_EN_SHFT    ) //0x0000008 
+#define CTL_PAYLOAD_TRCOFF          0x0
 
 #define CTL_BITSCLEAR_TRCON         0x0
 #define CTL_BITSCLEAR_TRCOFF        CTL_PAYLOAD_TRCON

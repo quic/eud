@@ -16,17 +16,24 @@
 #include <fstream>
 #include <string>
 #include "libusb-1.0/libusb.h"
+
 #if defined ( EUD_WIN_ENV )
 	#include <ctime>
+	#include <direct.h>      /* _mkdir() */
+	#include <windows.h>     /* SYSTEMTIME, GetLocalTime */
 #endif
 
 #if defined ( EUD_LNX_ENV )
 	#include <stdio.h>
 	#include <stdlib.h>
 	#include <vector>
+	#include <time.h>        /* clock_gettime, localtime_r */
+	#include <sys/stat.h>   /* mkdir() */
+	#include <sys/types.h>
 #endif
 
 #include "usb.h"
+#include "eud_log.h" 
 
 #if defined ( EUD_WIN_ENV )
 //===---------------------------------------------------------------------===//
@@ -515,51 +522,61 @@ VOID _cdecl QCEUD_Print(const char* Format, ...)
 #ifndef PERIPHERAL_PRINT_ENABLE
 	return;
 #endif
-
-#define DBG_MSG_MAX_SZ 1024
-	va_list arguments;
-	CHAR   msgBuffer[DBG_MSG_MAX_SZ];
-
-	va_start(arguments, Format);
-	_vsnprintf_s(msgBuffer, DBG_MSG_MAX_SZ, _TRUNCATE, Format, arguments);
-	va_end(arguments);
 #ifndef DEBUGLEVEL1
 	return;
 #endif
+	va_list arguments;
+	CHAR    msgBuffer[EUD_LOG_MSG_MAX_SZ];
+
+	va_start(arguments, Format);
+	EUD_VSNPRINTF(msgBuffer, EUD_LOG_MSG_MAX_SZ, Format, arguments);
+	va_end(arguments);
+#if defined(EUD_LOG_SINK_DEBUGVIEW)
+	// DebugView sink: post to the Windows kernel debug channel only.
 	OutputDebugString(msgBuffer);
+#else
+	// File sink: persist to C:/Temp/EUD/eud_logs.txt via eud_log.cpp
+	eud_log_write(msgBuffer);
+#endif
 }
 
 //FIXME - cause this to be compiled out if DEBUGLEVEL2 not defined
 VOID _cdecl QCEUD_Print2(const char* Format, ...)
 {
-	#ifndef PERIPHERAL_PRINT_ENABLE
+#ifndef PERIPHERAL_PRINT_ENABLE
 	return;
-	#endif
-#define DBG_MSG_MAX_SZ 1024
-	va_list arguments;
-	CHAR   msgBuffer[DBG_MSG_MAX_SZ];
-
-	va_start(arguments, Format);
-	_vsnprintf_s(msgBuffer, DBG_MSG_MAX_SZ, _TRUNCATE, Format, arguments);
-	va_end(arguments);
+#endif
 #ifndef DEBUGLEVEL2
 	return;
 #endif
+	va_list arguments;
+	CHAR    msgBuffer[EUD_LOG_MSG_MAX_SZ];
+
+	va_start(arguments, Format);
+	EUD_VSNPRINTF(msgBuffer, EUD_LOG_MSG_MAX_SZ, Format, arguments);
+	va_end(arguments);
+
+#if defined(EUD_LOG_SINK_DEBUGVIEW)
+	// DebugView sink: post to the Windows kernel debug channel only.
 	OutputDebugString(msgBuffer);
+#else
+	// File sink: persist to C:/Temp/EUD/eud_logs.txt via eud_log.cpp.
+	eud_log_write(msgBuffer);
+#endif
 }
 #endif
 
 bool get_dev_info(libusb_device *dev, eud_device_info * eud_device);
 
-FILE *log_file;
-static libusb_context *ctx = NULL; //a libusb session	
+// ctx is intentionally NOT initialised here – libusb_usb_init() does that.
+static libusb_context *ctx = NULL;
 
 void libusb_usb_init()
 {
-	int r; //for return values
-	
-	//initialize a library session
-	r = libusb_init(&ctx); 
+	int r;
+
+	// Initialize a libusb session.
+	r = libusb_init(&ctx);
 	if (r < 0) {
         QCEUD_Print("Init Error \n");
 	}
@@ -575,6 +592,8 @@ void libusb_usb_deinit()
 {
 	//needs to be called to end the libusb library session
     libusb_exit(ctx);
+	ctx = NULL;
+	QCEUD_Print("libusb_usb_deinit: session closed.\n");
 }
 
 
@@ -610,6 +629,8 @@ USB_ERR_t UsbDevice::UsbOpen(int* error_code, libusb_device *dev )
 	uint32_t libusb_ret; 
     libusb_device_handle *cur_dev_handle; //a device handle
 	
+	// Open file for logging
+	eud_log_open();
 	libusb_ret = libusb_open(dev, &(this->dev_handle_));
 	cur_dev_handle = this->dev_handle_;
 	
@@ -661,6 +682,8 @@ void UsbDevice::UsbClose()
 			usb_device_initialized_ = FALSE;
 		}
 
+		// EUD Logging close 
+		eud_log_close();
 	}
 }
 
@@ -933,54 +956,57 @@ bool get_dev_info(libusb_device *dev, eud_device_info * eud_device)
 }
 
 #if defined ( EUD_LNX_ENV )
-//FIXME - cause this to be compiled out if DEBUGLEVEL1 not defined
+/*
+ * QCEUD_Print / QCEUD_Print2  –  Linux build
+*/
 extern "C" VOID QCEUD_Print(PCHAR Format, ...)
 {
 	#ifndef PERIPHERAL_PRINT_ENABLE
 	return;
 	#endif
-#define DBG_MSG_MAX_SZ 1024
-	va_list arguments;
-	CHAR   msgBuffer[DBG_MSG_MAX_SZ];
-
-	va_start(arguments, Format);
-	vsnprintf(msgBuffer, DBG_MSG_MAX_SZ, Format, arguments);
-
-	va_end(arguments);
-	log_file=fopen("libeud_output.txt", "a");
-	fprintf(log_file, "%s", msgBuffer);
-	fclose(log_file);
 #ifndef DEBUGLEVEL1
 	return;
 #endif
-	//OutputDebugString(msgBuffer);
-	//std::clog<<msgBuffer<<std::endl;
+	va_list arguments;
+	CHAR    msgBuffer[EUD_LOG_MSG_MAX_SZ];
 
+	va_start(arguments, Format);
+	EUD_VSNPRINTF(msgBuffer, EUD_LOG_MSG_MAX_SZ, Format, arguments);
+	va_end(arguments);
+
+#if defined(EUD_LOG_SINK_DEBUGVIEW)
+	/* DebugView sink: no kernel channel on Linux – mirror to stderr. */
+	fprintf(stderr, "%s", msgBuffer);
+#else
+	/* File sink: persist to /tmp/EUD/eud_logs.txt via eud_log.cpp. */
+	eud_log_write(msgBuffer);
+#endif
 }
 
-
+/* QCEUD_Print2 – secondary debug print, guarded by DEBUGLEVEL2 */
 
 extern "C" VOID QCEUD_Print2(PCHAR Format, ...)
 {
-	#ifndef PERIPHERAL_PRINT_ENABLE
+#ifndef PERIPHERAL_PRINT_ENABLE
 	return;
-	#endif
-#define DBG_MSG_MAX_SZ 1024
-	va_list arguments;
-	CHAR   msgBuffer[DBG_MSG_MAX_SZ];
-
-	va_start(arguments, Format);
-	 vsnprintf(msgBuffer, DBG_MSG_MAX_SZ, Format, arguments);
-	//_vsnprintf_s(msgBuffer, DBG_MSG_MAX_SZ, _TRUNCATE, Format, arguments);
-	va_end(arguments);
-    printf ("%s", msgBuffer); //DW: To print the message to cout
-    fflush(stdout);
+#endif
 #ifndef DEBUGLEVEL2
 	return;
 #endif
-	//OutputDebugString(msgBuffer);
-	//std::clog<<msgBuffer<<std::endl;
+	va_list arguments;
+	CHAR    msgBuffer[EUD_LOG_MSG_MAX_SZ];
 
+	va_start(arguments, Format);
+	EUD_VSNPRINTF(msgBuffer, EUD_LOG_MSG_MAX_SZ, Format, arguments);
+	va_end(arguments);
+
+#if defined(EUD_LOG_SINK_DEBUGVIEW)
+	/* DebugView sink: no kernel channel on Linux – mirror to stderr. */
+	fprintf(stderr, "%s", msgBuffer);
+#else
+	/* File sink: persist to /tmp/EUD/eud_logs.txt via eud_log.cpp. */
+	eud_log_write(msgBuffer);
+#endif
 }
 
-#endif
+#endif /* EUD_LNX_ENV */

@@ -1239,8 +1239,8 @@ EUD_ERR_t get_set_and_clear_bits(uint32_t devicetype, uint32_t* ctl_setbits_p, u
             *ctl_clearbits_p = CTL_BITSCLEAR_TRCON;
         }
         else if (action == DISABLE) {
-            *ctl_setbits_p = CTL_PAYLOAD_JTAGOFF;
-            *ctl_clearbits_p = CTL_BITSCLEAR_JTAGOFF;
+            *ctl_setbits_p = CTL_PAYLOAD_TRCOFF;
+            *ctl_clearbits_p = CTL_BITSCLEAR_TRCOFF;
         }
         break;
     default:
